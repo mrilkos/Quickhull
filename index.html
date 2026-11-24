@@ -1,0 +1,1492 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* Pop-ups des algorithmes comparés */
+.algo-card{cursor:pointer;position:relative}.algo-card:focus-visible{outline:2px solid var(--cyan);outline-offset:4px}
+#algoModal{position:fixed;inset:0;z-index:90;background:rgba(5,0,14,.86);backdrop-filter:blur(9px);display:flex;align-items:center;justify-content:center;padding:18px}
+#algoModal[hidden]{display:none}
+.algo-dialog{position:relative;width:min(850px,100%);max-height:min(88vh,900px);overflow:auto;background:linear-gradient(145deg,#1b1029,#0c0715);border:1px solid rgba(255,255,255,.2);border-radius:24px;padding:clamp(20px,4vw,34px);box-shadow:0 28px 90px rgba(0,0,0,.65);display:grid;grid-template-columns:minmax(150px,240px) 1fr;gap:26px;align-items:start}
+.algo-dialog h3{font:400 clamp(22px,3vw,32px) Bungee,sans-serif;color:var(--yel);margin:4px 42px 8px 0}
+.algo-dialog p{color:var(--mute);margin:8px 0}.algo-dialog strong{color:var(--fg)}
+.algo-portrait{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:16px;border:1px solid var(--line);background:#21142e}
+.algo-placeholder{aspect-ratio:3/4;border-radius:16px;border:1px solid var(--line);background:radial-gradient(circle at 50% 35%,rgba(255,46,136,.35),transparent 45%),linear-gradient(145deg,#241333,#090512);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--pink);font:400 44px Bungee,sans-serif}
+.algo-placeholder small{font:600 11px 'JetBrains Mono',monospace;color:var(--mute);padding:14px}
+.algo-tag{display:inline-block;font:600 11px 'JetBrains Mono',monospace;letter-spacing:.12em;color:var(--cyan);text-transform:uppercase}
+.algo-complexity{display:inline-block;margin:8px 0;padding:8px 13px;border:1px solid rgba(0,240,255,.4);border-radius:12px;color:var(--cyan);font:600 18px 'JetBrains Mono',monospace}
+.algo-close{position:absolute;right:16px;top:14px;border:1px solid var(--line);background:rgba(255,255,255,.08);color:white;border-radius:50%;width:38px;height:38px;font-size:20px;cursor:pointer}
+.algo-source{font-size:12px!important;margin-top:16px!important}.algo-source a{color:var(--cyan)}
+@media(max-width:600px){.algo-dialog{grid-template-columns:1fr;gap:16px}.algo-portrait,.algo-placeholder{width:150px;aspect-ratio:1;justify-self:center;border-radius:50%}}
+
+.race-s{gap:10px}
+.race-s h2{font-size:clamp(22px,3vw,36px);margin:2px 0 0}
+.race-s .kicker{margin-bottom:0}
+#raceGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+.rc{--c:var(--cyan);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:10px;align-items:center;padding:7px 10px 7px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--c);transition:border-color .4s,background .4s}
+.rc.done{background:rgba(0,255,160,.05)}
+.rc h3{margin:0;font:700 15px 'Space Grotesk',sans-serif;color:var(--fg);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.rc h3 b{font:700 17px 'JetBrains Mono',monospace;color:var(--yel);white-space:nowrap}
+.rc.done h3 b{color:#00ffa0}
+.rc p{margin:2px 0 5px;font-size:12px;line-height:1.3;color:var(--mute)}
+.rc .tg{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+.rc .tg span{font:600 10px 'JetBrains Mono',monospace;border:1px solid var(--c);color:var(--c);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.rc .st{font:11px 'JetBrains Mono',monospace;color:var(--mute)}
+.rc .st em{font-style:normal;color:var(--fg)}
+.rc canvas{width:100%;aspect-ratio:2/1;display:block;border-radius:10px;background:rgba(0,0,0,.32)}
+@media(max-width:760px){#raceGrid{grid-template-columns:1fr}}
+</style></head><body>
+<!doctype html>
+<meta charset="utf-8">
+<title>QuickHull en 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amarante&family=Bungee&family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{--bg:#07000f;--fg:#f5f0ff;--mute:#b9accf;--pink:#ff2e88;--cyan:#00f0ff;--yel:#ffe600;--vio:#8b5cf6;--card:rgba(255,255,255,.07);--line:rgba(255,255,255,.16);color-scheme:dark}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 'Space Grotesk',system-ui,sans-serif;overflow:hidden}
+#deck{position:fixed;inset:0;z-index:1}
+.slide{position:absolute;inset:0;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:16px;max-width:1120px;margin:0 auto;padding:max(64px,calc(env(safe-area-inset-top,0px) + 56px)) max(16px,env(safe-area-inset-right,0px)) 120px max(16px,env(safe-area-inset-left,0px));box-sizing:border-box;opacity:0;pointer-events:none;transform:translateY(32px) scale(.97);filter:blur(6px);transition:opacity .7s cubic-bezier(.2,.8,.2,1),transform .9s cubic-bezier(.2,.8,.2,1),filter .7s ease}
+.slide.leave{opacity:0;transform:translateX(-48px) scale(.96);filter:blur(4px);transition:opacity .6s ease,transform .7s cubic-bezier(.4,0,.2,1),filter .6s ease}
+.slide.on{opacity:1;pointer-events:auto;transform:none;filter:none}
+/* Apparition : chaque colonne ou carte surgit l'une après l'autre */
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.07)}80%{transform:scale(.98)}100%{opacity:1;transform:scale(1)}}
+.slide.on > :not(.split):not(.grid):not(.tl),
+.slide.on .split > *,
+.slide.on .grid > *,
+.slide.on .tl > li{animation:pop .55s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 140ms + 80ms)}
+h1,h2{font-family:Bungee,'Arial Black',sans-serif;font-weight:400;line-height:1.05;text-wrap:balance;margin:0}
+h2{font-size:clamp(28px,5vw,56px);text-transform:uppercase}
+h2 span{background:linear-gradient(90deg,var(--pink),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+.title-h1{font-size:clamp(60px,15vw,190px);background:linear-gradient(90deg,var(--pink),var(--yel),var(--cyan),var(--pink));background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 6s linear infinite;letter-spacing:.02em}
+.title-h1.sm{font-size:clamp(44px,7.2vw,104px)}
+.ending{flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:24px}
+.endtxt{flex:0 0 auto;max-width:100%}
+.end-h{font-family:'Amarante',Bungee,serif;font-weight:400;text-transform:uppercase;font-size:clamp(28px,4.2vw,60px);line-height:1.1;margin:0;color:var(--fg);overflow-wrap:break-word}
+.end-h span{color:var(--pink)}
+.endvid{flex:0 0 auto;width:min(640px,100%)}
+.endvid video{display:block;width:100%;max-height:60vh;background:transparent;margin:0 auto}
+.goatbox{container-type:inline-size;position:relative;width:100%;aspect-ratio:4/3;border-radius:18px;border:1px solid var(--line);background:radial-gradient(circle at 30% 20%,rgba(139,92,246,.14),rgba(0,0,0,.4) 70%);overflow:hidden}
+.goat{position:absolute;width:0;height:0;z-index:2}
+.goat .gi,.goat .sh{position:absolute;left:0;top:0;transform:translate(-50%,-50%);user-select:none;pointer-events:none}
+.goat .gi{display:block;max-width:none;width:clamp(36px,5.2vw,58px);width:9.4cqw;height:auto;transition:opacity .5s,transform .5s;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
+.goat .sh{display:block;width:clamp(34px,4.8vw,54px);width:9.4cqw;height:auto;max-width:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45));opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-25deg);transition:opacity .5s,transform .6s cubic-bezier(.3,1.6,.5,1)}
+.goat.sheep .gi{opacity:0;transform:translate(-50%,-50%) scale(.4)}
+.goat.sheep .sh{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}
+.goat.hit .gi{animation:goatHop .5s ease}
+@keyframes goatHop{0%{transform:translate(-50%,-50%) scale(1)}40%{transform:translate(-50%,-70%) scale(1.25)}100%{transform:translate(-50%,-50%) scale(1)}}
+#ropeSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+#ropePoly{fill:transparent;stroke:var(--yel);stroke-width:6;stroke-linejoin:round;filter:drop-shadow(0 0 7px rgba(255,230,0,.65));stroke-dasharray:1 1;stroke-dashoffset:1;opacity:0;transition:fill .7s ease}
+#ropePoly.run{opacity:1;stroke-dashoffset:0;transition:stroke-dashoffset 2.2s linear,fill .7s ease}
+#ropePoly.full{fill:rgba(255,230,0,.13)}
+.team-emo{font-size:clamp(30px,5.5vw,58px);letter-spacing:.35em;text-align:center;margin:0 0 6px;filter:drop-shadow(0 0 10px rgba(255,230,0,.5))}
+.bravo-msg{font-family:'Amarante',Bungee,serif;font-weight:400;text-transform:uppercase;line-height:1.02;text-align:center;font-size:clamp(46px,10vw,132px);text-align:center;background:linear-gradient(90deg,var(--pink),var(--yel),var(--cyan),var(--pink));background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 4s linear infinite}
+@keyframes flow{to{background-position:200% center}}
+.kicker{font-family:'JetBrains Mono',monospace;color:var(--cyan);letter-spacing:.14em;font-size:13px;text-transform:uppercase}
+.kicker.sm{font-size:11px}
+.lead{font-size:clamp(17px,2.2vw,22px);color:var(--mute);max-width:60ch;margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;backdrop-filter:blur(6px);min-width:0;transition:transform .25s,border-color .25s,box-shadow .25s}
+.card:hover{transform:translateY(-4px);border-color:var(--cyan);box-shadow:0 10px 30px rgba(0,240,255,.15)}
+.card h3{font-family:Bungee,sans-serif;font-weight:400;font-size:18px;margin:0 0 6px;color:var(--yel)}
+.card p{margin:0;color:var(--mute)}
+.ich{display:flex;gap:14px;align-items:flex-start}
+.ic{width:38px;height:38px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:var(--cyan);filter:drop-shadow(0 0 6px currentColor)}
+.ic.p{color:var(--pink)}.ic.y{color:var(--yel)}.ic.c{color:var(--cyan)}.ic.v{color:#b79bff}
+.ic.lg{width:56px;height:56px}
+.emo{font-size:1.25em;margin-right:4px;filter:drop-shadow(0 0 6px rgba(255,46,136,.5))}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center}
+@media(max-width:760px){.split{grid-template-columns:1fr}}
+.tl{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;padding:0;margin:0;list-style:none}
+.tl li{border-top:3px solid var(--pink);padding-top:10px;min-width:0}
+.tl b{font-family:Bungee,sans-serif;font-weight:400;font-size:28px;color:var(--cyan);display:block}
+.tl span{color:var(--mute);font-size:15px}
+pre{font-family:'JetBrains Mono',monospace;font-size:13px;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:14px;padding:16px;overflow:auto;color:#e9e1ff;max-width:100%;margin:0}
+pre .k{color:var(--pink)}pre .f{color:var(--cyan)}pre .n{color:var(--yel)}pre .c{color:#7d6fa0}
+canvas.dc{width:100%;height:auto;border-radius:18px;border:1px solid var(--line);background:rgba(0,0,0,.35);display:block;max-width:100%;box-sizing:border-box}
+.mini{width:100%;height:230px;border-radius:18px;border:1px solid var(--line);background:radial-gradient(circle at 50% 40%,rgba(255,46,136,.12),rgba(0,0,0,.4));display:block;touch-action:none}
+.hero3d{display:block;max-width:100%;width:100%;height:340px;border-radius:24px;border:1px solid var(--line);background:radial-gradient(circle at 50% 45%,rgba(0,240,255,.14),rgba(0,0,0,.2));display:block;touch-action:none}
+.hint{font:600 12px 'JetBrains Mono',monospace;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;display:flex;gap:8px;align-items:center}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.cap{min-height:3em;font-size:16px;color:var(--yel);margin:0}
+.det{font-size:14px;color:var(--mute);background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:14px;padding:12px 14px;max-height:170px;overflow:auto;margin:0}
+.det b{color:var(--fg)}
+.det .y{color:var(--yel)}.det .p{color:var(--pink)}.det .c{color:var(--cyan)}.det .v{color:#b79bff}
+.btn{font:700 15px 'Space Grotesk',sans-serif;background:var(--pink);color:#fff;border:0;border-radius:999px;padding:10px 20px;cursor:pointer;box-shadow:0 0 22px rgba(255,46,136,.55)}
+.btn.alt{background:var(--cyan);color:#00101a;box-shadow:0 0 22px rgba(0,240,255,.45)}
+.btn.gold{background:var(--yel);color:#1a1200;box-shadow:0 0 26px rgba(255,230,0,.6);font-size:18px;padding:14px 28px}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:focus-visible,.opt:focus-visible,input:focus-visible{outline:3px solid var(--yel);outline-offset:3px}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;padding:12px 16px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--fg);font:500 16px 'Space Grotesk',sans-serif;cursor:pointer}
+.opt:disabled{cursor:default}
+.opt.ok{background:rgba(0,255,160,.25);border-color:#00ffa0}
+.opt.no{background:rgba(255,46,136,.3);border-color:var(--pink)}
+.big{font-family:Bungee,sans-serif;font-size:clamp(40px,8vw,84px);color:var(--yel);margin:0;line-height:1}
+.hud{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--cyan)}
+.portrait{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.pimg{width:240px;height:260px;max-width:100%;object-fit:cover;border-radius:14px;border:1px solid var(--line);background:#fff}
+.figimg{width:100%;max-height:180px;object-fit:contain;border-radius:14px;border:1px solid var(--line);background:#fff}
+.tag{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--yel);color:var(--yel);border-radius:999px;padding:4px 12px;font:600 12px 'JetBrains Mono',monospace;letter-spacing:.08em;width:fit-content}
+input[type=range]{width:100%;accent-color:var(--pink)}
+table.vt{width:100%;border-collapse:collapse;font:14px 'JetBrains Mono',monospace}
+table.vt td,table.vt th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;color:var(--fg)}
+table.vt th{color:var(--cyan);font-weight:600}
+table.vt td:first-child,table.vt th:first-child{text-align:left}
+.title-s{display:flex;flex-direction:column;justify-content:space-between;gap:20px}
+.prof{align-self:flex-start;max-width:360px;display:flex;gap:12px;align-items:center}
+.mid{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,340px);gap:28px;align-items:center}
+@media(max-width:760px){.mid{grid-template-columns:1fr}}
+.team{align-self:center;max-width:520px;width:100%;text-align:center;padding:14px 22px}
+.team h3{display:flex;flex-direction:column;gap:4px;font-size:17px;line-height:1.5}
+#stage{position:fixed;top:max(12px,env(safe-area-inset-top,0px));left:max(14px,env(safe-area-inset-left,0px));z-index:5;display:flex;gap:12px;align-items:center;font:600 12px 'JetBrains Mono',monospace;color:var(--yel);letter-spacing:.1em;pointer-events:none}
+#xp{width:120px;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+#xp i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pink),var(--yel),var(--cyan));transition:width .4s}
+#nav{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px max(16px,env(safe-area-inset-right,0px)) max(14px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(transparent,rgba(7,0,15,.92))}
+#dots{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;flex:1}
+#dots i{width:10px;height:10px;border-radius:50%;background:var(--line);cursor:pointer;display:block}
+#dots i.on{background:var(--yel);box-shadow:0 0 12px var(--yel)}
+#cnt{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--mute);min-width:4em;text-align:center}
+#conf{position:fixed;inset:0;width:100%;height:100%;z-index:9;pointer-events:none}
+@media(prefers-reduced-motion:reduce){.slide.on > *,.slide.on .split > *,.slide.on .grid > *,.slide.on .tl > li,.title-h1,.bravo-msg{animation:none}}
+.demo-vis{justify-content:center;padding-top:56px}
+.demo-vis h2{font-size:clamp(22px,3vw,36px);margin:4px 0 10px}
+.demo-vis .kicker{margin-bottom:0}
+.demo-vis iframe{display:block;width:100%;height:clamp(420px,calc(100vh - 230px),860px);border:1px solid var(--line);border-radius:18px;background:#07000F}
+
+.app-card{cursor:pointer;text-align:left;font:inherit;color:inherit}
+.app-card .hint{display:block;margin-top:10px;font:700 12px 'JetBrains Mono',monospace;color:var(--cyan);letter-spacing:.08em}
+.app-card:focus-visible{outline:3px solid var(--yel);outline-offset:3px}
+.amodal{position:fixed;inset:0;z-index:60;background:rgba(7,0,15,.82);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.amodal[hidden]{display:none}
+.amodal-box{position:relative;background:#120821;border:1px solid var(--line);border-radius:22px;padding:24px;width:min(760px,100%);max-height:100%;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+#amC{display:block;width:100%;height:auto;aspect-ratio:640/420;border-radius:14px;background:#0b0416;border:1px solid var(--line);touch-action:none}
+.amclose{position:absolute;top:12px;right:12px;background:none;border:1px solid var(--line);color:var(--fg);border-radius:999px;width:38px;height:38px;cursor:pointer;font-size:16px}
+.amclose:focus-visible{outline:3px solid var(--yel)}
+#amT{font-family:Bungee,sans-serif;font-weight:400;color:var(--yel);font-size:22px;margin:0 0 12px;padding-right:44px}
+#amD{color:var(--mute);margin:12px 0 0}
+#amH{font-family:'JetBrains Mono',monospace;color:var(--cyan);margin:8px 0 0;font-size:14px}
+.page-s{justify-content:center;padding:0}
+.page-s iframe{display:block;width:100%;height:clamp(420px,calc(100vh - 110px),860px);border:1px solid var(--line);border-radius:18px;background:#0b0c10}
+.slide.vis-full{max-width:none;width:100%;padding:max(44px,calc(env(safe-area-inset-top,0px) + 38px)) max(14px,env(safe-area-inset-right,0px)) max(72px,calc(env(safe-area-inset-bottom,0px) + 68px)) max(14px,env(safe-area-inset-left,0px));gap:0;overflow:hidden;align-items:center;justify-content:center}
+.slide.vis-full iframe{display:block;width:75vw;height:75vh;max-width:100%;max-height:100%;flex:0 0 auto;border:1px solid var(--line);border-radius:18px;background:#090b10;box-shadow:0 24px 64px rgba(0,0,0,.5)}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h12l-2.5 4L17 12H5"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" stroke-dasharray="3 2.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18.5 22 12 17.5 5.5 22l2-8.5L2 9h7z"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M12 14v4M8 21h8"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16M8 16v-5M12 16V8M16 16v-9"/></symbol>
+<symbol id="i-drone" viewBox="0 0 24 24"><path d="M8 8l8 8M16 8l-8 8"/><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><rect x="10" y="10" width="4" height="4" rx="1"/></symbol>
+<symbol id="i-robot" viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="11" rx="2"/><circle cx="9.5" cy="13" r="1.2" fill="currentColor"/><circle cx="14.5" cy="13" r="1.2" fill="currentColor"/><path d="M12 8V4M10 4h4"/></symbol>
+<symbol id="i-gamepad" viewBox="0 0 24 24"><path d="M7 9h10a4 4 0 0 1 4 4v1a3 3 0 0 1-5.5 1.6L14.5 14h-5l-1 1.6A3 3 0 0 1 3 14v-1a4 4 0 0 1 4-4zM8 11v3M6.5 12.5h3"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M3 18l5-5 4 4 3-3 6 6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/></symbol>
+<symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2zM12 10v5M12 18v.01"/></symbol>
+<symbol id="i-brain" viewBox="0 0 24 24"><path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 3zM15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-3 3z"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></symbol>
+<symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M5 7h14M5 7l-3 6h6zM19 7l-3 6h6z"/></symbol>
+<symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></symbol>
+<symbol id="i-hand" viewBox="0 0 24 24"><path d="M9 11V5a2 2 0 0 1 4 0v6M13 10V3a2 2 0 0 1 4 0v8M17 11V6a2 2 0 0 1 4 0v8a7 7 0 0 1-7 7h-1a6 6 0 0 1-5-3l-3-5a2 2 0 0 1 3-2l2 2V11"/></symbol>
+<symbol id="i-goat" viewBox="0 0 64 56">
+  <!-- tail -->
+  <path d="M12 26 Q7 24 8 19" fill="none" stroke="#f3e3c3" stroke-width="3" stroke-linecap="round"/>
+  <!-- legs -->
+  <rect x="17" y="41" width="5" height="11" rx="2.5" fill="#8a5a2e"/>
+  <rect x="26" y="42" width="5" height="10" rx="2.5" fill="#8a5a2e"/>
+  <rect x="36" y="42" width="5" height="10" rx="2.5" fill="#8a5a2e"/>
+  <rect x="45" y="41" width="5" height="11" rx="2.5" fill="#8a5a2e"/>
+  <!-- body -->
+  <ellipse cx="29" cy="33" rx="18" ry="11" fill="#d9a86c"/>
+  <ellipse cx="29" cy="37" rx="13" ry="5" fill="#f3e3c3" opacity=".55"/>
+  <!-- neck + head -->
+  <ellipse cx="45" cy="25" rx="8" ry="9" fill="#e7bd84"/>
+  <ellipse cx="50" cy="20" rx="8.5" ry="8" fill="#e7bd84"/>
+  <!-- ear -->
+  <ellipse cx="42" cy="17" rx="5" ry="2.8" transform="rotate(-25 42 17)" fill="#c98f52"/>
+  <!-- horns -->
+  <path d="M49 13 Q47 5 52 3" fill="none" stroke="#f3e3c3" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M54 13 Q55 6 59 6" fill="none" stroke="#f3e3c3" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- snout -->
+  <ellipse cx="56" cy="23" rx="4" ry="3.2" fill="#f3e3c3"/>
+  <circle cx="58" cy="22" r=".9" fill="#5a3a20"/>
+  <!-- eye -->
+  <circle cx="51" cy="18" r="2" fill="#2a1a10"/>
+  <circle cx="51.7" cy="17.3" r=".7" fill="#fff"/>
+  <!-- beard -->
+  <path d="M53 26 Q52 32 49 34 Q53 32 55 27 Z" fill="#f3e3c3"/>
+</symbol>
+</defs></svg>
+
+<div id="stage" aria-hidden="true"><span id="stxt"></span><div id="xp"><i></i></div></div>
+<canvas id="conf" aria-hidden="true"></canvas>
+
+<div id="deck">
+
+<section class="slide title-s" data-t="Titre" data-lvl="NIVEAU 01 · DÉBUT">
+  <div class="card prof">
+    <span style="font-size:34px;line-height:1" aria-hidden="true">👑</span>
+    <div>
+      <div class="kicker sm">Encadré par</div>
+      <h3 style="font-family:Bungee,sans-serif;font-weight:400;color:var(--cyan);margin:4px 0 0;font-size:24px">Pr. Ennaji</h3>
+    </div>
+  </div>
+  <div class="mid">
+    <div>
+      <div class="kicker">🔺 Algorithmique avancée · ENSA Khouribga</div>
+      <h1 class="title-h1 sm">QUICKHULL</h1>
+      <p class="lead" style="margin-top:12px">Calcul de l'enveloppe convexe par la méthode diviser pour régner.</p>
+    </div>
+    <canvas id="orb" class="hero3d" aria-label="Enveloppe convexe en 3D, à faire tourner à la souris"></canvas>
+  </div>
+  <div class="card team">
+    <div class="kicker sm">Réalisé par</div>
+    <h3 style="font-family:Bungee,sans-serif;font-weight:400;color:var(--yel);margin:6px 0 0">
+      <span>Abderrahmane Khayakkoute</span>
+      <span>Ilyas El Houari</span>
+      <span>Mossabe Zerradi</span>
+    </h3>
+  </div>
+</section>
+
+<section class="slide" data-t="Histoire" data-lvl="NIVEAU 02 · HISTOIRE">
+  <div class="kicker">📜 Partie 1 · Contexte historique</div>
+  <h2>Une <span>histoire</span> de l'enveloppe convexe</h2>
+  <ul class="tl">
+    <li><svg class="ic c" style="width:30px;height:30px"><use href="#i-flag"/></svg><b>1972</b><span>Ronald Graham publie le parcours de Graham, un algorithme en O(n log n).</span></li>
+    <li><svg class="ic p" style="width:30px;height:30px"><use href="#i-target"/></svg><b>1973</b><span>R. A. Jarvis propose la marche de Jarvis, dite « emballage cadeau ».</span></li>
+    <li><svg class="ic y" style="width:30px;height:30px"><use href="#i-gear"/></svg><b>1977</b><span>William F. Eddy publie une méthode planaire fondée sur la division : l'ancêtre de QuickHull.</span></li>
+    <li><svg class="ic v" style="width:30px;height:30px"><use href="#i-star"/></svg><b>1978</b><span>Bykat propose une approche voisine, indépendamment. Le nom QuickHull vient de Quicksort.</span></li>
+    <li><svg class="ic c" style="width:30px;height:30px"><use href="#i-trophy"/></svg><b>1996</b><span>Timothy Chan présente son algorithme en O(n log h), qui combine Graham et Jarvis.</span></li>
+  </ul>
+</section>
+
+<section class="slide" data-t="Inventeurs" data-lvl="NIVEAU 03 · INVENTEURS">
+  <div class="kicker">🧑‍🔬 Partie 1 · Qui l'a inventé ?</div>
+  <h2>Les <span>pionniers</span></h2>
+  <div class="split">
+    <div class="card portrait">
+      <img class="pimg" src="img/eddy.png" alt="Portrait de William F. Eddy">
+      <h3 style="font-family:Bungee,sans-serif;font-weight:400;color:var(--yel);margin:0;font-size:22px">William F. Eddy</h3>
+      <p>Méthode planaire par division, 1977 : le point de départ de QuickHull.</p>
+    </div>
+    <div class="card portrait">
+      <img class="pimg" src="img/bykat.png" alt="Illustration d'une personne qui se pose la question, avec un nuage de points et une enveloppe convexe">
+      <h3 style="font-family:Bungee,sans-serif;font-weight:400;color:var(--cyan);margin:0;font-size:22px">Bykat</h3>
+      <p>Approche voisine proposée en 1978, de façon indépendante.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-t="Notions" data-lvl="NIVEAU 04 · NOTIONS">
+  <div class="kicker">🔷 Partie 2 · Notions de base</div>
+  <h2>Convexe <span>vs</span> concave</h2>
+  <div class="split">
+    <div>
+      <canvas id="cvx" class="mini" aria-label="Figure convexe en 3D : le segment reste dans la figure"></canvas>
+      <div class="row" style="justify-content:space-between;margin-top:8px"><span class="hint"><svg class="ic c" style="width:16px;height:16px;filter:none"><use href="#i-hand"/></svg>Glissez pour tourner</span><span class="tag" style="border-color:#00ffa0;color:#00ffa0">CONVEXE</span></div>
+      <img class="figimg" src="img/pic_convexe.png" alt="Figure convexe" style="margin-top:10px">
+      <p class="det" style="margin-top:10px">Deux points verts reliés par un segment : <b>le segment reste entièrement dans la figure</b>. Tous les segments de ce solide sont dans la figure.</p>
+    </div>
+    <div>
+      <canvas id="ccv" class="mini" aria-label="Figure concave en 3D : le segment sort de la figure"></canvas>
+      <div class="row" style="justify-content:space-between;margin-top:8px"><span class="hint"><svg class="ic p" style="width:16px;height:16px;filter:none"><use href="#i-hand"/></svg>Glissez pour tourner</span><span class="tag" style="border-color:var(--pink);color:var(--pink)">CONCAVE</span></div>
+      <img class="figimg" src="img/pic_concave.png" alt="Figure concave" style="margin-top:10px">
+      <p class="det" style="margin-top:10px">Deux points A et B reliés par un segment : <b>le segment sort de la figure</b> à cause du creux. C'est ce qui rend la figure concave.</p>
+    </div>
+  </div>
+  <div class="card ich"><svg class="ic y"><use href="#i-scale"/></svg><div><h3>Enveloppe convexe</h3><p>Le plus petit ensemble convexe qui contient tous les points : un élastique tendu autour de clous plantés dans une planche.</p></div></div>
+</section>
+
+<section class="slide" data-t="Dilemme" data-lvl="NIVEAU 05 · PROBLÈME">
+  <div class="kicker"><img src="img/goat.png" width="18" height="17" alt="" style="vertical-align:-3px"> Pour commencer · Un problème tout simple</div>
+  <h2>Le dilemme du <span>fermier</span></h2>
+  <div class="split">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <p class="lead">Un fermier a perdu le sens de l'orientation… et surtout <b style="color:var(--fg)">12 chèvres</b> en liberté. Il n'a qu'une corde et veut le plus petit enclos possible, <b style="color:var(--fg)">sans qu'aucune chèvre ne reste dehors</b>.</p>
+      <p class="lead">Facile à l'œil. Mais comment l'expliquer à un ordinateur ? <span style="color:var(--yel)">Spoiler : c'est QuickHull.</span></p>
+      <div class="row" style="margin-top:6px">
+        <button class="btn gold" id="ropeBtn" style="font-size:15px;padding:10px 20px">Tendre la corde 🪢</button>
+        <button class="btn alt" id="goatBtn">Nouvelles chèvres</button>
+      </div>
+      <p class="hud" style="color:var(--cyan)">12 chèvres, 1 corde, 0 patience.</p>
+    </div>
+    <div class="goatbox" id="goatBox" aria-label="Douze chèvres et la corde qui les entoure">
+      <svg id="ropeSvg" viewBox="0 0 800 600" aria-hidden="true"><polygon id="ropePoly" points="" pathLength="1"/></svg>
+    </div>
+  </div>
+</section>
+<section class="slide" data-t="Principe" data-lvl="NIVEAU 06 · PRINCIPE">
+  <div class="kicker">🧩 Partie 3 · Principe</div>
+  <h2>Diviser pour <span>régner</span></h2>
+  <div class="grid">
+    <div class="card ich"><svg class="ic c"><use href="#i-target"/></svg><div><h3>1. Extrêmes</h3><p>Trouver les points les plus à gauche (A) et les plus à droite (B). Le segment [AB] coupe l'ensemble en deux.</p></div></div>
+    <div class="card ich"><svg class="ic p"><use href="#i-gear"/></svg><div><h3>2. Diviser</h3><p>Chaque côté est traité séparément. On cherche le point C le plus éloigné de la base.</p></div></div>
+    <div class="card ich"><svg class="ic y"><use href="#i-cpu"/></svg><div><h3>3. Récursion</h3><p>Les points dans le triangle formé avec C sont éliminés. Même traitement sur les deux nouveaux côtés.</p></div></div>
+    <div class="card ich"><svg class="ic v"><use href="#i-trophy"/></svg><div><h3>4. Combiner</h3><p>Les sommets trouvés forment l'enveloppe convexe finale.</p></div></div>
+  </div>
+</section>
+
+<section class="slide" data-t="Démo 2D" data-lvl="NIVEAU 07 · DÉMO">
+  <div class="kicker">🎮 Démonstration interactive · 13 points</div>
+  <h2>Pas à <span>pas</span></h2>
+  <div class="split">
+    <div>
+      <canvas id="dc" class="dc" width="460" height="340" role="img" aria-label="Démonstration de QuickHull en 2D"></canvas>
+      <div class="row" style="margin-top:12px">
+        <button class="btn alt" id="prevBtn" disabled>◀ Précédent</button>
+        <button class="btn" id="stepBtn"><svg class="ic" style="width:16px;height:16px;stroke:none;fill:currentColor;filter:none;color:#fff"><use href="#i-play"/></svg> Étape suivante</button>
+        <button class="btn alt" id="resetBtn">Réinitialiser</button>
+        <span class="hud" id="stepcnt"></span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <p class="cap" id="cap" aria-live="polite"></p>
+      <div class="det" id="det"></div>
+      <p class="kicker sm" style="color:var(--mute)">Légende : <span style="color:#ffe600">jaune = S1</span> · <span style="color:#b79bff">violet = S2</span> · <span style="color:var(--pink)">rose = triangle courant</span> · <span style="color:#7d6fa0">gris barré = éliminé</span></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide demo-vis" data-t="Pseudo-code" data-lvl="NIVEAU 08 · PSEUDO-CODE">
+  <div class="kicker">🔎 Démo · pas à pas</div>
+  <h2>Le <span>pseudo-code</span></h2>
+  <iframe src="quickhull_pas_a_pas.html" title="QuickHull pas à pas : animation de l'algorithme" loading="lazy"></iframe>
+</section>
+
+<section class="slide vis-full" data-t="Python" data-lvl="NIVEAU 09 · VISUALISATION INTERACTIVE">
+  <iframe
+    src="quickhull_step_by_step_visualizer.html"
+    title="QuickHull Python Visualizer — Step-by-Step Execution"
+    loading="eager"
+    allow="clipboard-write"
+  ></iframe>
+</section>
+
+<section class="slide" data-t="Complexité" data-lvl="NIVEAU 10 · COMPLEXITÉ">
+  <div class="kicker">⏱️ Partie 5 · Complexité en temps</div>
+  <h2>Combien ça <span>coûte</span> ?</h2>
+  <div class="split">
+    <div>
+      <canvas id="cx" class="dc" width="560" height="320" role="img" aria-label="Graphique : nombre d'opérations selon n, pour n, n log n et n carré"></canvas>
+      <div style="margin-top:10px"><label class="hud" for="cn">n = <span id="cnv">20</span> points</label><input type="range" id="cn" min="2" max="60" value="20"></div>
+      <table class="vt" style="margin-top:8px"><thead><tr><th>Courbe</th><th>Opérations</th></tr></thead><tbody id="cvals"></tbody></table>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card ich"><svg class="ic c"><use href="#i-clock"/></svg><div><h3>Principe</h3><p>À chaque niveau de récursion, on parcourt les points restants : coût O(n) par niveau. Tout dépend du nombre de niveaux.</p></div></div>
+      <div class="card ich"><svg class="ic y"><use href="#i-bolt"/></svg><div><h3>Meilleur et moyen cas : O(n log n)</h3><p>Le point C coupe les points en deux moitiés. Il y a log n niveaux, chacun coûte n : T(n) = 2T(n/2) + O(n), donc n × log n.</p></div></div>
+      <div class="card ich"><svg class="ic p"><use href="#i-warn"/></svg><div><h3>Pire cas : O(n²)</h3><p>Le point C ne coupe qu'un seul point à la fois : n niveaux. T(n) = T(n−1) + O(n), donc n + (n−1) + … + 1 = n(n+1)/2.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-t="Bilan" data-lvl="NIVEAU 11 · BILAN">
+  <div class="kicker">⚖️ Partie 5 · Bilan</div>
+  <h2>Avantages <span>&amp;</span> inconvénients</h2>
+  <div class="split">
+    <div class="card ich"><svg class="ic c"><use href="#i-bolt"/></svg><div><h3>Avantages</h3>
+      <p><b style="color:#fff">Complexité moyenne O(n log n)</b> : efficace pour des ensembles de taille moyenne à grande.</p>
+      <p style="margin-top:10px"><b style="color:#fff">Intuitif</b> : basé sur diviser pour régner.</p>
+      <p style="margin-top:10px"><b style="color:#fff">Polyvalent</b> : utilisé dans plusieurs domaines.</p></div></div>
+    <div class="card ich"><svg class="ic p"><use href="#i-warn"/></svg><div><h3>Inconvénients</h3>
+      <p><b style="color:#fff">Pire cas O(n²)</b> : points alignés ou partage très déséquilibré.</p>
+      <p style="margin-top:10px"><b style="color:#fff">Plus dur à implémenter</b> que Graham à cause de la récursion.</p>
+      <p style="margin-top:10px"><b style="color:#fff">Peu avantageux</b> pour de très petits ensembles.</p></div></div>
+  </div>
+</section>
+
+<section class="slide" data-t="Autres algos" data-lvl="NIVEAU 12 · COMPARAISON">
+  <div class="kicker">🥇 Comparaison</div>
+  <h2>Autres <span>algorithmes</span></h2>
+  <div class="grid">
+    <div class="card ich algo-card" role="button" tabindex="0" aria-label="Découvrir le parcours de Graham" data-algo="graham"><svg class="ic c"><use href="#i-clock"/></svg><div><h3>Parcours de Graham</h3><p class="big" style="font-size:30px">O(n log n)</p><p><b style="color:#fff">Le maniaque.</b> Trie tout d'abord, puis balaie les points.</p><span class="hint">Cliquer pour découvrir →</span></div></div>
+    <div class="card ich algo-card" role="button" tabindex="0" aria-label="Découvrir la marche de Jarvis" data-algo="jarvis"><svg class="ic p"><use href="#i-map"/></svg><div><h3>Marche de Jarvis</h3><p class="big" style="font-size:30px">O(nh)</p><p><b style="color:#fff">L'emballeur.</b> Fait le tour des points, comme un papier cadeau. n : points ; h : sommets.</p><span class="hint">Cliquer pour découvrir →</span></div></div>
+    <div class="card ich algo-card" role="button" tabindex="0" aria-label="Découvrir l’algorithme de Chan" data-algo="chan"><svg class="ic y"><use href="#i-bolt"/></svg><div><h3>Algorithme de Chan</h3><p class="big" style="font-size:30px">O(n log h)</p><p><b style="color:#fff">Le malin.</b> Mélange Graham et Jarvis pour garder le meilleur des deux.</p><span class="hint">Cliquer pour découvrir →</span></div></div>
+  </div>
+</section>
+
+<section class="slide race-s" data-t="Course" data-lvl="NIVEAU 13 · COURSE">
+  <div class="kicker">🏁 Comparaison · mêmes points, six algorithmes</div>
+  <h2>La <span>course</span> des algorithmes</h2>
+  <div class="row" style="gap:10px">
+    <button class="btn gold" id="raceReplay" style="font-size:14px;padding:8px 18px">Rejouer ▶</button>
+    <button class="btn alt" id="raceNew" style="font-size:14px;padding:8px 18px">Nouveaux points</button>
+    <span class="hud" id="raceInfo" style="font-size:13px">Tous testent à la même vitesse : 50 tests par seconde.</span>
+  </div>
+  <div id="raceGrid"></div>
+</section>
+
+
+<section class="slide" data-t="Applications" data-lvl="NIVEAU 14 · APPLICATIONS">
+  <div class="kicker">🚀 Partie 6 · Applications</div>
+  <h2>Où on <span>l'utilise</span></h2>
+  <p class="hud" style="margin:0 0 14px">Cliquez sur une carte pour voir l'exemple en action.</p>
+  <div class="grid">
+    <div class="card ich app-card" role="button" tabindex="0" data-app="robot"><svg class="ic c"><use href="#i-robot"/></svg><div><h3>🤖 Robotique</h3><p>Planification de trajectoires et évitement d'obstacles.</p></div></div>
+    <div class="card ich app-card" role="button" tabindex="0" data-app="data"><svg class="ic y"><use href="#i-chart"/></svg><div><h3>📊 Analyse de données</h3><p>Visualisation de nuages de points et identification de groupes.</p></div></div>
+    <div class="card ich app-card" role="button" tabindex="0" data-app="game"><svg class="ic p"><use href="#i-gamepad"/></svg><div><h3>🎮 Jeux vidéo</h3><p>Détection de collisions et optimisation du rendu 3D.</p></div></div>
+    <div class="card ich app-card" role="button" tabindex="0" data-app="image"><svg class="ic v"><use href="#i-image"/></svg><div><h3>🖼️ Traitement d'images</h3><p>Simplification des contours d'objets via l'enveloppe convexe.</p></div></div>
+    <div class="card ich app-card" role="button" tabindex="0" data-app="drone"><svg class="ic c"><use href="#i-drone"/></svg><div><h3>🛸 Drones</h3><p>Délimiter la zone minimale à survoler pour livrer tous les colis.</p></div></div>
+  </div>
+</section>
+
+
+
+<section class="slide" data-t="Quiz" data-lvl="NIVEAU 15 · QUIZ">
+  <div class="kicker">🧠 Quiz · 10 questions</div>
+  <h2>Testez-<span>vous</span></h2>
+  <div class="card" style="max-width:none">
+    <div class="hud" id="qnum"></div>
+    <h3 id="qtext" style="font-family:Bungee,sans-serif;font-weight:400;color:var(--fg);font-size:clamp(18px,2.6vw,24px);margin:10px 0 4px"></h3>
+    <div id="qopts"></div>
+    <p class="cap" id="qexp" style="min-height:2.2em;font-size:15px"></p>
+    <div class="row" style="justify-content:space-between;margin-top:8px">
+      <span class="hud" id="qscore"></span>
+      <button class="btn" id="qnext" disabled>Question suivante</button>
+    </div>
+  </div>
+</section>
+
+<section class="slide page-s" data-t="Jeu" data-lvl="NIVEAU 16 · BOSS FINAL">
+  <iframe src="hull_runner.html" title="Hull Runner : soyez QuickHull" loading="lazy"></iframe>
+</section>
+
+<section class="slide" data-t="Merci" data-lvl="FIN">
+  <div class="kicker">✨ Conclusion</div>
+  <h1 class="title-h1" style="font-size:clamp(48px,11vw,140px)">MERCI !</h1>
+  <p class="lead">QuickHull est simple, efficace et polyvalent. Pour les ensembles de points de taille moyenne à grande, c'est un outil puissant en géométrie algorithmique.</p>
+  <div class="row"><span class="tag"><svg class="ic y" style="width:16px;height:16px"><use href="#i-trophy"/></svg> ALGORITHME MAÎTRISÉ</span></div>
+  <div class="row"><button class="btn gold" id="celebrate">🎉 Fini ! Célébrons ensemble</button></div>
+  <p class="kicker">Abderrahmane Khayakkoute · Ilyas El Houari · Mossabe Zerradi</p>
+</section>
+
+<section class="slide ending" id="ending" data-t="Fin" data-lvl="FIN">
+  <div class="endtxt"><h1 class="end-h">That's the end<br><span>of our presentation</span></h1></div>
+  <div class="endvid"><video autoplay muted loop playsinline controls aria-label="Vidéo de fin"><source src="media/ending.webm" type="video/webm"></video></div>
+</section>
+</div>
+
+<nav id="nav">
+  <button class="btn alt" id="prev">Précédent</button>
+  <div id="dots"></div>
+  <span id="cnt"></span>
+  <button class="btn" id="next">Suivant</button>
+</nav>
+
+
+<div id="algoModal" hidden>
+  <div class="algo-dialog" role="dialog" aria-modal="true" aria-labelledby="algoTitle">
+    <button class="algo-close" id="algoClose" aria-label="Fermer">×</button>
+    <div id="algoPhoto"></div>
+    <div><span class="algo-tag" id="algoTag">Chercheur · Algorithmique</span><h3 id="algoTitle"></h3><div class="algo-complexity" id="algoComplexity"></div><div id="algoText"></div><p class="algo-source" id="algoSource"></p></div>
+  </div>
+</div>
+
+<div id="appModal" class="amodal" hidden>
+  <div class="amodal-box" role="dialog" aria-modal="true" aria-labelledby="amT">
+    <button class="amclose" id="amClose" aria-label="Fermer">✕</button>
+    <h3 id="amT"></h3>
+    <canvas id="amC" width="640" height="420" role="img" aria-label="Exemple d'application"></canvas>
+    <p id="amD"></p>
+    <p id="amH"></p>
+  </div>
+</div>
+
+<script src="js/three.min.js"></script>
+<script>
+/* ---------- Navigation ---------- */
+const slides=[...document.querySelectorAll('.slide')];
+let cur=0;
+const dotsEl=document.getElementById('dots');
+function setupSlide(s){
+  [...s.children].forEach((c,k)=>c.style.setProperty('--i',k));
+  s.querySelectorAll('.split,.grid,.tl').forEach(p=>[...p.children].forEach((c,k)=>c.style.setProperty('--i',k)));
+}
+slides.forEach(setupSlide);
+function buildDots(){
+  dotsEl.innerHTML='';
+  slides.forEach((s,i)=>{const d=document.createElement('i');d.title=s.dataset.t;d.setAttribute('role','button');d.tabIndex=0;d.onclick=()=>go(i);d.onkeydown=e=>{if(e.key==='Enter')go(i)};dotsEl.appendChild(d)});
+}
+buildDots();
+function go(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  if(slides[cur]&&slides[cur].id==='ending'){endChime();startFireworks();}
+  slides.forEach((s,k)=>{
+    if(k===cur){s.classList.remove('leave');s.classList.add('on')}
+    else{if(s.classList.contains('on')){s.classList.add('leave')}s.classList.remove('on');setTimeout(()=>{if(k!==cur)s.classList.remove('leave')},750)}
+    s.setAttribute('aria-hidden',String(k!==cur));
+  });
+  [...dotsEl.children].forEach((d,k)=>d.classList.toggle('on',k===cur));
+  document.getElementById('cnt').textContent=(cur+1)+' / '+slides.length;
+  document.getElementById('stxt').textContent=slides[cur].dataset.lvl;
+  if(slides[cur].dataset.t==='Complexité')cxAnim();
+  if(slides[cur].dataset.t==='Course')setTimeout(raceStart,350);
+  document.querySelector('#xp i').style.width=(cur/(slides.length-1)*100)+'%';
+  document.getElementById('prev').disabled=cur===0;
+  document.getElementById('next').disabled=cur===slides.length-1;
+}
+document.getElementById('prev').onclick=()=>go(cur-1);
+document.getElementById('next').onclick=()=>go(cur+1);
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='BUTTON'&&(e.key===' '||e.key==='Enter'))return;
+  if(e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'){go(cur+1)}
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){go(cur-1)}
+});
+
+/* ---------- Géométrie commune ---------- */
+const cr=(a,b,p)=>(b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);
+function hullIdx(P){
+  const o=P.map((_,i)=>i).sort((i,j)=>P[i].x-P[j].x||P[i].y-P[j].y);
+  const lo=[],up=[];
+  for(const i of o){while(lo.length>=2&&cr(P[lo[lo.length-2]],P[lo[lo.length-1]],P[i])<=0)lo.pop();lo.push(i)}
+  for(const i of o.slice().reverse()){while(up.length>=2&&cr(P[up[up.length-2]],P[up[up.length-1]],P[i])<=0)up.pop();up.push(i)}
+  lo.pop();up.pop();
+  return lo.concat(up);
+}
+
+/* ---------- Dilemme du fermier : chèvres et corde ---------- */
+const goatBox=document.getElementById('goatBox'),ropeSvg=document.getElementById('ropeSvg'),ropePoly=document.getElementById('ropePoly');
+const goatEls=[];
+/* le mouton 🐑 est dessiné une fois sur un canvas puis rogné à ses pixels visibles :
+   il est ainsi centré exactement comme la chèvre, quelle que soit la police d'emoji de l'appareil */
+function sheepURL(){
+  try{
+    const S=200,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
+    g.font=(S*.78)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';g.textAlign='center';g.textBaseline='alphabetic';
+    g.fillText('🐑',S/2,S*.78);
+    const d=g.getImageData(0,0,S,S).data;let x0=S,y0=S,x1=-1,y1=-1;
+    for(let y=0;y<S;y++)for(let x=0;x<S;x++)if(d[(y*S+x)*4+3]>16){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+    if(x1<0)return null;
+    const w=x1-x0+1,h=y1-y0+1,o=document.createElement('canvas');o.width=w;o.height=h;
+    o.getContext('2d').drawImage(c,x0,y0,w,h,0,0,w,h);return o.toDataURL('image/png');
+  }catch(e){return null}
+}
+const SHEEP=sheepURL();
+for(let k=0;k<12;k++){const s=document.createElement('span');s.className='goat';s.innerHTML='<img class="gi" src="img/goat.png" width="46" height="43" alt="">'+(SHEEP?'<img class="sh" src="'+SHEEP+'" alt="">':'<span class="sh" style="font-size:clamp(30px,4.6vw,52px);line-height:1">🐑</span>');s.setAttribute('aria-hidden','true');goatBox.appendChild(s);goatEls.push(s);}
+let goatPts=[],ropeOn=false,ropeTimers=[],ropeHull=[];
+const GW=800,GH=600;
+function placeGoats(){
+  /* 12 chèvres bien espacées, ni collées au bord ; enveloppe lisible (5 à 8 sommets) ;
+     les chèvres intérieures restent à bonne distance de la corde pour ne jamais marcher dessus */
+  const U=p=>({x:p.x*4,y:p.y*3});
+  const segDist=(p,a,b)=>{const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy)));return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy)};
+  let best=null;
+  for(let a=0;a<3000;a++){
+    const pts=[];let t=0;
+    while(pts.length<12&&t<3000){t++;
+      const p={x:11+Math.random()*78,y:15+Math.random()*70};
+      if(pts.every(q=>Math.hypot(q.x-p.x,(q.y-p.y)*1.33)>=17))pts.push(p)}
+    if(pts.length<12)continue;
+    const H=hullIdx(pts);
+    if(H.length<5||H.length>8)continue;
+    best=best||pts;
+    const hp=H.map(i=>U(pts[i]));
+    let ok=true;
+    for(let i=0;i<12&&ok;i++){
+      if(H.includes(i))continue;
+      const p=U(pts[i]);
+      for(let k=0;k<hp.length;k++){if(segDist(p,hp[k],hp[(k+1)%hp.length])<30){ok=false;break}}
+    }
+    if(ok)return pts;
+  }
+  return best||[];
+}
+function layoutGoats(){
+  goatPts=placeGoats();
+  goatEls.forEach((el,i)=>{if(goatPts[i]){el.style.left=goatPts[i].x+'%';el.style.top=goatPts[i].y+'%'}});
+  updateRope();
+}
+const hudP=document.querySelector('#goatBtn').closest('.split').querySelector('.hud');
+function setCaption(done){
+  if(done===null){hudP.textContent='12 chèvres, 1 corde, 0 patience.';return}
+  hudP.textContent=done?ropeHull.length+' chèvres tendent la corde. Les '+(goatPts.length-ropeHull.length)+' autres, devenues des moutons, sont tranquilles au milieu 😎':'La corde se déroule…';
+}
+function updateRope(){
+  ropeTimers.forEach(clearTimeout);ropeTimers=[];
+  ropePoly.classList.remove('run','full');
+  goatEls.forEach(el=>el.classList.remove('sheep','hit'));
+  if(goatPts.length<3){ropePoly.setAttribute('points','');return}
+  ropeHull=hullIdx(goatPts);
+  /* la corde passe par le centre de chaque chèvre de l'enveloppe */
+  const P=ropeHull.map(i=>({x:goatPts[i].x*GW/100,y:goatPts[i].y*GH/100}));
+  ropePoly.setAttribute('points',P.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' '));
+  if(!ropeOn){setCaption(null);return}
+  setCaption(false);
+  void ropePoly.getBoundingClientRect();
+  ropePoly.classList.add('run');
+  /* chaque chèvre sursaute quand la corde la rejoint */
+  const L=P.map((p,i)=>{const q=P[(i+1)%P.length];return Math.hypot(q.x-p.x,q.y-p.y)});
+  const tot=L.reduce((a,b)=>a+b,0);let acc=0;
+  P.forEach((_,k)=>{
+    const tk=2200*acc/tot;acc+=L[k];
+    ropeTimers.push(setTimeout(()=>goatEls[ropeHull[k]].classList.add('hit'),tk));
+  });
+  ropeTimers.push(setTimeout(()=>{
+    ropePoly.classList.add('full');
+    let d=0;
+    goatEls.forEach((el,i)=>{if(goatPts[i]&&!ropeHull.includes(i)){el.style.transitionDelay='';ropeTimers.push(setTimeout(()=>el.classList.add('sheep'),d));d+=140}});
+    ropeTimers.push(setTimeout(()=>setCaption(true),d+300));
+  },2250));
+}
+document.getElementById('ropeBtn').onclick=()=>{ropeOn=!ropeOn;updateRope()};
+document.getElementById('goatBtn').onclick=()=>{ropeOn=false;layoutGoats()};
+layoutGoats();
+
+/* ---------- La course des algorithmes (mêmes points, même vitesse de tests) ---------- */
+const RACE_R=50,RACE_N=40,RACE_GREEN='#00ffa0';
+const raceCross=(a,b,c)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
+function racePoints(n){
+  const P=[];let t=0;
+  while(P.length<n&&t<20000){t++;
+    const u=Math.random()||1e-9,v=Math.random(),r=Math.sqrt(-2*Math.log(u)),
+      x=.5+.19*r*Math.cos(6.2832*v),y=.5+.19*r*Math.sin(6.2832*v);
+    if(x<.06||x>.94||y<.08||y>.92)continue;
+    if(P.every(q=>Math.hypot(q.x-x,(q.y-y)*1.6)>.045))P.push({x,y});
+  }
+  return P;
+}
+/* chaque algorithme renvoie une liste d'événements {c:coût en tests, s:état à dessiner} */
+function raceMk(P){
+  const n=P.length,E=[];let dim=new Uint8Array(n);
+  const ev=(c,s)=>{E.push({c,s:Object.assign({dim:dim.slice()},s)})};
+  return{E,dim:()=>dim,setDim:(i)=>{dim[i]=1},ev,n};
+}
+function raceSortEvents(M,cost,fn,K){ // révèle le tri progressivement
+  K=Math.max(1,Math.min(K||10,cost));
+  for(let k=1;k<=K;k++){const c=Math.round(cost*k/K)-Math.round(cost*(k-1)/K);M.ev(c,fn(k/K))}
+}
+function raceBrute(P,CAP){
+  const M=raceMk(P),n=P.length,edges=[];let tot=0;
+  outer:for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+    let sg=null,ok=true;
+    for(let k=0;k<n;k++){if(k===i||k===j)continue;
+      const c=raceCross(P[i],P[j],P[k]);
+      M.ev(1,{edges:edges.slice(),cur:[i,j],probe:k});if(++tot>CAP)break outer;
+      if(c!==0){if(sg===null)sg=c>0;else if((c>0)!==sg){ok=false;break}}}
+    if(ok)edges.push([i,j]);
+  }
+  return M.E;
+}
+function raceGift(P){
+  const M=raceMk(P),n=P.length,edges=[];
+  let s=0;for(let i=1;i<n;i++)if(P[i].x<P[s].x||(P[i].x===P[s].x&&P[i].y<P[s].y))s=i;
+  let p=s,guard=0;
+  do{let cand=(p+1)%n;
+    for(let q=0;q<n;q++){if(q===p||q===cand)continue;
+      const c=raceCross(P[p],P[cand],P[q]);
+      M.ev(1,{edges:edges.slice(),cur:[p,cand],probe:q});
+      if(c<0||(c===0&&Math.hypot(P[q].x-P[p].x,P[q].y-P[p].y)>Math.hypot(P[cand].x-P[p].x,P[cand].y-P[p].y)))cand=q}
+    edges.push([p,cand]);p=cand;
+  }while(p!==s&&++guard<n+2);
+  M.E.res=edges.map(e=>e[0]);return M.E;
+}
+function raceGraham(P){
+  const M=raceMk(P),n=P.length;
+  let pv=0;for(let i=1;i<n;i++)if(P[i].y>P[pv].y||(P[i].y===P[pv].y&&P[i].x<P[pv].x))pv=i;
+  let calls=0;
+  const rest=[...Array(n).keys()].filter(i=>i!==pv).sort((a,b)=>{calls++;const c=raceCross(P[pv],P[a],P[b]);if(c!==0)return c>0?-1:1;return Math.hypot(P[a].x-P[pv].x,P[a].y-P[pv].y)-Math.hypot(P[b].x-P[pv].x,P[b].y-P[pv].y)});
+  raceSortEvents(M,calls,f=>({fan:{pv,order:rest,f}}),10);
+  const st=[pv,rest[0]];
+  for(let k=1;k<rest.length;k++){const q=rest[k];
+    while(st.length>=2){const c=raceCross(P[st[st.length-2]],P[st[st.length-1]],P[q]);
+      M.ev(1,{chain:st.concat(q),probe:q});
+      if(c<=0)st.pop();else break}
+    st.push(q);
+  }
+  M.E.res=st.slice();return M.E;
+}
+function raceMono(P,idx,M,base){
+  let calls=0;
+  const o=idx.slice().sort((a,b)=>{calls++;return P[a].x-P[b].x||P[a].y-P[b].y});
+  raceSortEvents(M,calls,f=>Object.assign({},base,{sweep:P[o[Math.min(o.length-1,Math.floor(f*o.length))]].x}),10);
+  const build=(seq,done)=>{const h=[];
+    for(const q of seq){
+      while(h.length>=2){const c=raceCross(P[h[h.length-2]],P[h[h.length-1]],P[q]);
+        M.ev(1,Object.assign({},base,{chains:done.concat([h.concat(q)]),probe:q}));
+        if(c<=0)h.pop();else break}
+      h.push(q)}
+    return h};
+  const lo=build(o,[]);
+  const up=build(o.slice().reverse(),[lo]);
+  M.E.res=lo.concat(up);return M.E;
+}
+function raceMonotone(P){const M=raceMk(P);return raceMono(P,[...Array(P.length).keys()],M,{})}
+function raceQuick(P){
+  const M=raceMk(P),n=P.length,E=[];
+  let A=0,B=0;for(let i=1;i<n;i++){if(P[i].x<P[A].x)A=i;if(P[i].x>P[B].x)B=i}
+  for(let q=0;q<n;q++)M.ev(1,{probe:q,sweepAB:true});
+  const all=[...Array(n).keys()].filter(i=>i!==A&&i!==B);
+  const rec=(a,b,S,sgn)=>{
+    const outs=[];let far=-1,fd=0;
+    for(const q of S){
+      M.ev(1,{edges:E.slice(),cur:[a,b],probe:q});
+      const c=sgn*raceCross(P[a],P[b],P[q]);
+      if(c>0){outs.push(q);if(c>fd){fd=c;far=q}}}
+    if(far<0){E.push([a,b]);M.ev(0,{edges:E.slice()});return}
+    const lo=outs.filter(q=>q!==far&&sgn*raceCross(P[a],P[far],P[q])>0);
+    const ro=outs.filter(q=>q!==far&&!lo.includes(q));
+    const ro2=ro.filter(q=>sgn*raceCross(P[far],P[b],P[q])>0);
+    ro.filter(q=>!ro2.includes(q)).forEach(q=>M.setDim(q));
+    M.ev(0,{edges:E.slice(),cur:[a,b],tri:[a,far,b]});
+    rec(a,far,outs.filter(q=>q!==far),sgn);
+    rec(far,b,ro,sgn);
+  };
+  rec(A,B,all,1);rec(B,A,all,1);
+  M.E.res=E.map(e=>e[0]);return M.E;
+}
+function raceAkl(P){
+  const M=raceMk(P),n=P.length;
+  let l=0,r=0,t=0,b=0;
+  for(let q=0;q<n;q++){M.ev(1,{probe:q,sweepAB:true});
+    if(P[q].x<P[l].x)l=q;if(P[q].x>P[r].x)r=q;if(P[q].y<P[t].y)t=q;if(P[q].y>P[b].y)b=q}
+  const ex=[...new Set([l,t,r,b])];
+  const quad=ex.length>=3?hullIdx(ex.map(i=>P[i])).map(k=>ex[k]):ex;
+  const keep=[];
+  for(let q=0;q<n;q++){
+    let inside=quad.length>=3;
+    if(quad.includes(q))inside=false;
+    else if(inside)for(let k=0;k<quad.length;k++)if(raceCross(P[quad[k]],P[quad[(k+1)%quad.length]],P[q])<=0){inside=false;break}
+    M.ev(1,{quad,probe:q});
+    if(inside)M.setDim(q);else keep.push(q);
+  }
+  return raceMono(P,keep,M,{quad});
+}
+const RACE_ALGOS=[
+  {n:'Force brute',d:'Teste chaque paire contre chaque point',t:'O(n³)',s:'O(1)',c:'#ffb020',run:(P)=>raceBrute(P,1400),brute:true},
+  {n:'Gift Wrapping',d:'Enroule une ficelle, un point à la fois',t:'O(nh)',s:'O(h)',c:'#ffe600',run:raceGift},
+  {n:'Graham Scan',d:'Trie par angle, retire chaque virage à droite',t:'O(n log n)',s:'O(n)',c:'#8b5cf6',run:raceGraham},
+  {n:'Monotone Chain',d:'Trie par x, construit l’enveloppe basse et haute',t:'O(n log n)',s:'O(n)',c:'#00f0ff',run:raceMonotone},
+  {n:'QuickHull',d:'Garde le point le plus loin, jette l’intérieur',t:'O(n log n)',s:'O(n)',c:'#ff2e88',run:raceQuick},
+  {n:'Akl–Toussaint + Chain',d:'Jette d’abord le milieu, puis chaîne',t:'O(n log n)',s:'O(n)',c:'#5bff9a',run:raceAkl}
+];
+let raceP=[],raceT0=0,raceCards=[],raceActive=false,raceEnd=0;
+function raceBuildCards(){
+  const g=document.getElementById('raceGrid');g.innerHTML='';raceCards=[];
+  RACE_ALGOS.forEach((a,i)=>{
+    const d=document.createElement('div');d.className='rc';d.style.setProperty('--c',a.c);
+    d.innerHTML='<div><h3><span>'+(i+1)+'. '+a.n+'</span><b>0.0s</b></h3><p>'+a.d+'</p><div class="tg"><span>Temps '+a.t+'</span><span>Espace '+a.s+'</span></div><div class="st"><em>0</em> tests</div></div><canvas></canvas>';
+    g.appendChild(d);
+    raceCards.push({el:d,cv:d.querySelector('canvas'),time:d.querySelector('b'),st:d.querySelector('.st'),a});
+  });
+}
+function raceSetup(){
+  raceP=racePoints(RACE_N);
+  const hull=hullIdx(raceP);
+  raceCards.forEach(c=>{
+    c.ev=c.a.run(raceP);
+    let acc=0;c.start=c.ev.map(e=>{const s=acc;acc+=e.c;return s});c.total=acc;
+    c.complete=!c.a.brute||false;
+    c.hull=hull;c.el.classList.remove('done');
+  });
+  const fin=Math.max(...raceCards.filter(c=>!c.a.brute).map(c=>c.total));
+  raceEnd=fin/RACE_R+0.6;
+}
+function raceStart(){raceSetup();raceT0=performance.now();raceActive=true;raceLoop()}
+function raceDrawCard(c,budget,tNow){
+  const cv=c.cv,dpr=Math.min(devicePixelRatio||1,2),W=Math.round(cv.clientWidth*dpr),H=Math.round(cv.clientHeight*dpr);
+  if(!W||!H)return;
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+  const x=cv.getContext('2d'),P=raceP,pad=14*dpr;
+  const X=p=>pad+p.x*(W-2*pad),Y=p=>pad+p.y*(H-2*pad);
+  x.clearRect(0,0,W,H);
+  const done=!c.a.brute&&budget>=c.total;
+  /* événement courant */
+  let k=0;{let lo=0,hi=c.ev.length-1;while(lo<hi){const m=(lo+hi+1)>>1;if(c.start[m]<=budget)lo=m;else hi=m-1}k=lo}
+  const s=c.ev[Math.max(0,k)]?c.ev[Math.max(0,k)].s:{};
+  const dim=s.dim||new Uint8Array(P.length);
+  const line=(a,b,col,w,dash)=>{x.beginPath();x.moveTo(X(a),Y(a));x.lineTo(X(b),Y(b));x.strokeStyle=col;x.lineWidth=w*dpr;x.setLineDash(dash?dash.map(v=>v*dpr):[]);x.stroke();x.setLineDash([])};
+  const poly=(idx,fill,stroke,w,close)=>{x.beginPath();idx.forEach((i,j)=>j?x.lineTo(X(P[i]),Y(P[i])):x.moveTo(X(P[i]),Y(P[i])));if(close)x.closePath();if(fill){x.fillStyle=fill;x.fill()}if(stroke){x.strokeStyle=stroke;x.lineWidth=w*dpr;x.lineJoin='round';x.stroke()}};
+  if(done){
+    poly(c.hull,'rgba(0,255,160,.13)',RACE_GREEN,2,true);
+  }else{
+    if(s.quad&&s.quad.length>=3)poly(s.quad,'rgba(139,92,246,.10)','rgba(139,92,246,.7)',1.5,true);
+    if(s.tri)poly(s.tri,'rgba(255,230,0,.10)','rgba(255,230,0,.5)',1,true);
+    if(s.fan){const f=s.fan,m=Math.max(1,Math.round(f.f*f.order.length));for(let j=0;j<m;j++)line(P[f.pv],P[f.order[j]],'rgba(139,92,246,.28)',1)}
+    if(s.sweep!==undefined){const sx=pad+s.sweep*(W-2*pad);x.beginPath();x.moveTo(sx,pad/2);x.lineTo(sx,H-pad/2);x.strokeStyle='rgba(0,240,255,.5)';x.lineWidth=1.5*dpr;x.stroke()}
+    if(s.edges)s.edges.forEach(e=>line(P[e[0]],P[e[1]],RACE_GREEN,2.2));
+    if(s.chain)poly(s.chain,null,RACE_GREEN,2.2,false);
+    if(s.chains)s.chains.forEach(ch=>poly(ch,null,RACE_GREEN,2.2,false));
+    if(s.cur)line(P[s.cur[0]],P[s.cur[1]],'#ffb020',2.4);
+    if(s.probe!==undefined&&s.cur)line(P[s.cur[0]],P[s.probe],'rgba(255,255,255,.75)',1,[3,3]);
+  }
+  /* points */
+  P.forEach((p,i)=>{
+    const onH=c.hull.includes(i);
+    x.beginPath();x.arc(X(p),Y(p),(done&&onH?3.2:2.2)*dpr,0,6.2832);
+    x.fillStyle=done?(onH?'#fff':'rgba(190,210,200,.55)'):(dim[i]?'rgba(150,140,175,.22)':'rgba(220,215,240,.75)');x.fill();
+  });
+  if(!done&&s.probe!==undefined){const p=P[s.probe];x.beginPath();x.arc(X(p),Y(p),5*dpr,0,6.2832);x.strokeStyle='#fff';x.lineWidth=1.3*dpr;x.stroke()}
+}
+function raceFrame(now){
+  const t=Math.min((now-raceT0)/1000,raceEnd),budget=t*RACE_R;
+  raceCards.forEach(c=>{
+    const fin=!c.a.brute&&budget>=c.total;
+    const tests=Math.min(Math.floor(budget),c.total);
+    const tt=fin?c.total/RACE_R:t;
+    c.time.textContent=(fin?'✓ ':'')+tt.toFixed(1)+'s';
+    c.st.innerHTML='<em>'+tests+'</em> tests'+(fin?' · <em>'+c.hull.length+'</em> points d’enveloppe':(c.a.brute&&t>=raceEnd?' · toujours en cours…':''));
+    c.el.classList.toggle('done',fin);
+    raceDrawCard(c,budget,t);
+  });
+  return t>=raceEnd;
+}
+function raceLoop(){
+  if(!raceActive)return;
+  const f=now=>{
+    if(!raceActive||!slides[cur]||slides[cur].dataset.t!=='Course'){raceActive=false;return}
+    const end=raceFrame(now);if(!end)requestAnimationFrame(f);else raceActive=false;
+  };
+  requestAnimationFrame(f);
+}
+raceBuildCards();
+document.getElementById('raceReplay').onclick=raceStart;
+document.getElementById('raceNew').onclick=()=>{raceStart()};
+addEventListener('resize',()=>{if(!raceActive&&raceCards.length&&raceP.length){const t=Math.min((performance.now()-raceT0)/1000,raceEnd);raceFrame(raceT0+t*1000)}});
+
+/* ---------- Mini scènes 3D (glissables) ---------- */
+function makeMini(cv,camZ){
+  const r=new THREE.WebGLRenderer({canvas:cv,alpha:true,antialias:true});
+  r.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const sc=new THREE.Scene();
+  const cm=new THREE.PerspectiveCamera(40,1,.1,50);cm.position.z=camZ;
+  const g=new THREE.Group();sc.add(g);
+  const o={r,sc,cm,g,cv,down:false,last:0};
+  o.size=()=>{const w=cv.clientWidth||300,h=cv.clientHeight||200;o.w=cv.clientWidth;o.h=cv.clientHeight;r.setSize(w,h,false);cm.aspect=w/h;cm.fov=w/h<1?2*Math.atan(Math.tan(20*Math.PI/180)/(w/h))*180/Math.PI:40;cm.updateProjectionMatrix()};
+  o.size();
+  let down=false,lx=0,ly=0;
+  cv.style.cursor='grab';
+  cv.addEventListener('pointerdown',e=>{down=true;o.down=true;lx=e.clientX;ly=e.clientY;cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'});
+  cv.addEventListener('pointermove',e=>{if(!down)return;g.rotation.y+=(e.clientX-lx)*.01;g.rotation.x+=(e.clientY-ly)*.01;lx=e.clientX;ly=e.clientY});
+  const up=()=>{down=false;o.down=false;o.last=Date.now();cv.style.cursor='grab'};
+  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  return o;
+}
+function polyGroup(geo,color,opacity){
+  const g=new THREE.Group();
+  g.add(new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color,transparent:true,opacity,side:THREE.DoubleSide})));
+  g.add(new THREE.LineSegments(new THREE.WireframeGeometry(geo),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.7})));
+  return g;
+}
+function segLine(a,b,color){
+  return new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),new THREE.LineBasicMaterial({color}));
+}
+function ball(p,color){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(.09,16,16),new THREE.MeshBasicMaterial({color}));
+  m.position.copy(p);return m;
+}
+function uniq(geo){
+  const p=geo.attributes.position.array,m={},out=[];
+  for(let i=0;i<p.length;i+=3){
+    const k=p[i].toFixed(3)+','+p[i+1].toFixed(3)+','+p[i+2].toFixed(3);
+    if(!m[k]){m[k]=1;out.push(new THREE.Vector3(p[i],p[i+1],p[i+2]))}
+  }
+  return out;
+}
+
+/* Figure convexe : icosaèdre, segment vert entre deux sommets opposés (à l'intérieur). */
+const convGeo=new THREE.IcosahedronGeometry(1,0);
+const cvxM=makeMini(document.getElementById('cvx'),4.2);
+cvxM.g.add(polyGroup(convGeo,0x00f0ff,.22));
+{
+  const cu=uniq(convGeo);const c0=cu[0];
+  const c1=cu.reduce((b,u)=>u.distanceTo(c0)>b.distanceTo(c0)?u:b,cu[0]);
+  cvxM.g.add(segLine(c0,c1,0x00ffa0),ball(c0,0x00ffa0),ball(c1,0x00ffa0));
+}
+
+/* Figure concave : même icosaèdre, un sommet enfoncé vers l'intérieur ; segment jaune entre deux voisins du creux. */
+const concGeo=new THREE.IcosahedronGeometry(1,0);
+const U=uniq(concGeo);const dV=U[0];
+const edgeLen=Math.min(...U.filter(u=>u!==dV).map(u=>u.distanceTo(dV)));
+const nb=U.filter(u=>u!==dV&&Math.abs(u.distanceTo(dV)-edgeLen)<.05);
+const nA=nb[0];
+const nB=nb.reduce((b,u)=>u.distanceTo(nA)>b.distanceTo(nA)?u:b,nb[0]);
+{
+  const pa=concGeo.attributes.position.array;
+  for(let i=0;i<pa.length;i+=3){
+    const v=new THREE.Vector3(pa[i],pa[i+1],pa[i+2]);
+    if(v.distanceTo(dV)<.02){v.multiplyScalar(.35);pa[i]=v.x;pa[i+1]=v.y;pa[i+2]=v.z}
+  }
+  concGeo.attributes.position.needsUpdate=true;
+}
+const concM=makeMini(document.getElementById('ccv'),4.2);
+concM.g.add(polyGroup(concGeo,0xff2e88,.22));
+concM.g.add(segLine(nA,nB,0xffe600),ball(nA,0xffe600),ball(nB,0xffe600));
+
+/* Modèle 3D du titre, au milieu à droite, glissable. */
+const orbM=makeMini(document.getElementById('orb'),3.6);
+orbM.g.add(polyGroup(new THREE.IcosahedronGeometry(1,1),0x00f0ff,.2));
+
+
+/* ---------- Démo 2D QuickHull (13 points, détails par étape) ---------- */
+/* Nuage aléatoire de 13 points (espacés pour rester lisibles) */
+function randomPts(n){
+  const pts=[];let guard=0;
+  while(pts.length<n&&guard<50000){
+    guard++;
+    const p={x:+(0.4+Math.random()*5.2).toFixed(2),y:+(0.4+Math.random()*4.2).toFixed(2)};
+    if(pts.every(q=>Math.hypot((q.x-p.x)*60,(q.y-p.y)*48)>=55))pts.push(p);
+  }
+  return pts;
+}
+function buildSteps(P){
+  const st=[];const idx=P.map((_,i)=>i);
+  let A=0,B=0;
+  P.forEach((p,i)=>{if(p.x<P[A].x)A=i;if(p.x>P[B].x)B=i});
+  st.push({k:'base',a:A,b:B,n:idx.length});
+  function find(Sk,a,b){
+    if(!Sk.length)return;
+    let c=Sk[0];
+    Sk.forEach(i=>{if(cr(P[a],P[b],P[i])>cr(P[a],P[b],P[c]))c=i});
+    const S1=Sk.filter(i=>cr(P[a],P[c],P[i])>0);
+    const S2=Sk.filter(i=>cr(P[c],P[b],P[i])>0);
+    const elim=Sk.filter(i=>i!==c&&!S1.includes(i)&&!S2.includes(i));
+    st.push({k:'split',a,b,c,S1,S2,elim,n:Sk.length,dist:cr(P[a],P[b],P[c])});
+    find(S1,a,c);find(S2,c,b);
+  }
+  find(idx.filter(i=>cr(P[A],P[B],P[i])>0),A,B);
+  find(idx.filter(i=>cr(P[B],P[A],P[i])>0),B,A);
+  return st;
+}
+let DP,DSTEPS,LBL,hullFinal;
+/* Lettres A, B, C… dans l'ordre de découverte de l'algorithme */
+function setupDemo(){
+  DP=randomPts(13);
+  DSTEPS=buildSteps(DP);
+  LBL=(()=>{const order=[],seen=new Set();const push=i=>{if(!seen.has(i)){seen.add(i);order.push(i)}};
+    push(DSTEPS[0].a);push(DSTEPS[0].b);DSTEPS.slice(1).forEach(s=>push(s.c));DP.forEach((_,i)=>push(i));
+    const m=[];order.forEach((i,k)=>{m[i]=String.fromCharCode(65+k)});return m;})();
+  hullFinal=hullIdx(DP);
+  stp=0;
+}
+const NM=i=>LBL[i];
+let stp=0;
+setupDemo();
+const dc=document.getElementById('dc'),dctx=dc.getContext('2d');
+const toC=p=>({x:40+p.x*60,y:310-p.y*48});
+const L=a=>'['+a.map(i=>NM(i)).join(', ')+']';
+function drawDemo(){
+  const c=dctx,W=dc.width,H2=dc.height;
+  c.clearRect(0,0,W,H2);
+  const n=DSTEPS.length;
+  const tri=(s,alpha,col)=>{
+    const A=toC(DP[s.a]),B=toC(DP[s.b]),C=toC(DP[s.c]);
+    c.beginPath();c.moveTo(A.x,A.y);c.lineTo(B.x,B.y);c.lineTo(C.x,C.y);c.closePath();
+    c.fillStyle='rgba(255,46,136,'+alpha+')';c.fill();
+    c.strokeStyle=col||'rgba(255,46,136,.9)';c.lineWidth=2;c.stroke();
+  };
+  if(stp>=1&&stp<=n){
+    for(let j=0;j<stp-1;j++){const s=DSTEPS[j];if(s.k==='split')tri(s,.06,'rgba(255,46,136,.25)')}
+    const s=DSTEPS[stp-1];
+    if(s.k==='base'){
+      const A=toC(DP[s.a]),B=toC(DP[s.b]);
+      c.beginPath();c.moveTo(A.x,A.y);c.lineTo(B.x,B.y);c.strokeStyle='#ffe600';c.lineWidth=3;c.stroke();
+    }else{
+      tri(s,.28);
+      s.S1.forEach(i=>{const q=toC(DP[i]);c.beginPath();c.arc(q.x,q.y,11,0,Math.PI*2);c.strokeStyle='#ffe600';c.lineWidth=2;c.stroke()});
+      s.S2.forEach(i=>{const q=toC(DP[i]);c.beginPath();c.arc(q.x,q.y,11,0,Math.PI*2);c.strokeStyle='#b79bff';c.lineWidth=2;c.stroke()});
+      s.elim.forEach(i=>{const q=toC(DP[i]);c.strokeStyle='#7d6fa0';c.lineWidth=2;c.beginPath();c.moveTo(q.x-7,q.y-7);c.lineTo(q.x+7,q.y+7);c.moveTo(q.x+7,q.y-7);c.lineTo(q.x-7,q.y+7);c.stroke()});
+      const PA=toC(DP[s.a]),PB=toC(DP[s.b]);
+      const ddx=PB.x-PA.x,ddy=PB.y-PA.y,L2=ddx*ddx+ddy*ddy;
+      const Lab=Math.hypot(DP[s.b].x-DP[s.a].x,DP[s.b].y-DP[s.a].y);
+      [...new Set([s.c,...s.S1,...s.S2,...s.elim])].forEach(i=>{
+        const P=toC(DP[i]); const t=((P.x-PA.x)*ddx+(P.y-PA.y)*ddy)/L2;
+        const F={x:PA.x+t*ddx,y:PA.y+t*ddy}; const isC=i===s.c;
+        const dist=Math.abs(cr(DP[s.a],DP[s.b],DP[i]))/Lab;
+        c.save(); c.setLineDash(isC?[]:[4,4]); c.beginPath(); c.moveTo(P.x,P.y); c.lineTo(F.x,F.y);
+        c.strokeStyle=isC?'#ff2e88':'rgba(185,172,207,.7)'; c.lineWidth=isC?2.5:1.2; c.stroke(); c.restore();
+        c.beginPath(); c.arc(F.x,F.y,2.6,0,Math.PI*2); c.fillStyle=isC?'#ff2e88':'rgba(185,172,207,.9)'; c.fill();
+        c.font='bold 11px JetBrains Mono, monospace'; c.fillStyle=isC?'#ff2e88':'#b9accf';
+        c.fillText('d='+dist.toFixed(1),(P.x+F.x)/2+6,(P.y+F.y)/2);
+      });
+    }
+  }
+  if(stp>n){
+    const h=hullFinal.map(i=>toC(DP[i]));
+    c.beginPath();h.forEach((q,i)=>i?c.lineTo(q.x,q.y):c.moveTo(q.x,q.y));c.closePath();
+    c.fillStyle='rgba(0,240,255,.15)';c.fill();c.strokeStyle='#00f0ff';c.lineWidth=3;c.stroke();
+  }
+  const inHull=new Set(stp>n?hullFinal:[]);
+  DP.forEach((p,i)=>{
+    const q=toC(p);
+    c.beginPath();c.arc(q.x,q.y,6,0,Math.PI*2);
+    c.fillStyle=inHull.has(i)?'#00f0ff':'#ffffff';c.fill();
+    c.fillStyle='#b9accf';c.font='12px JetBrains Mono, monospace';c.fillText(NM(i),q.x+8,q.y-7);
+  });
+  const cap=document.getElementById('cap'),det=document.getElementById('det');
+  document.getElementById('stepcnt').textContent='Étape '+Math.min(stp,n+1)+' / '+(n+1);
+  if(stp===0){
+    cap.textContent='Cliquez sur « Étape suivante » pour commencer.';
+    det.innerHTML='<b>Principe.</b> On prend les deux points extrêmes, puis on traite chaque côté de la base : on cherche le point le plus loin, on élimine les points qu\'il enferme dans son triangle, et on recommence sur les deux nouveaux côtés.<br><br>Ensemble de départ : 13 points, nommés de A à M.';
+  }else if(stp<=n){
+    const s=DSTEPS[stp-1];
+    if(s.k==='base'){
+      cap.textContent='Étape 1 : points extrêmes '+NM(s.a)+' (x minimal) et '+NM(s.b)+' (x maximal).';
+      det.innerHTML='<b>Base</b> : ['+NM(s.a)+' → '+NM(s.b)+'], tracée en jaune.<br>Les points au-dessus forment le premier sous-problème, ceux au-dessous le second.<br>Points à traiter au total : <span class="c">'+(s.n-2)+'</span>.';
+    }else{
+      cap.textContent='Étape '+(stp+1)+' : le point le plus loin de ['+NM(s.a)+' '+NM(s.b)+'] est '+NM(s.c)+'.';
+      det.innerHTML='<b>Sous-problème</b> : '+NM(s.a)+' → '+NM(s.b)+', avec <span class="c">'+s.n+'</span> points à l\'extérieur.<br>'
+        +'<b>Sommet trouvé</b> : <span class="p">'+NM(s.c)+'</span> (écart maximal '+s.dist.toFixed(1)+').<br>'
+        +'Les pointillés mesurent la distance de chaque point à ['+NM(s.a)+' '+NM(s.b)+'] : '+NM(s.c)+' est le plus loin, les autres sont plus proches.<br>'
+        +'<b>Éliminés</b> (dans le triangle) : <span style="color:#7d6fa0">'+(s.elim.length?L(s.elim):'aucun')+'</span><br>'
+        +'<b>S1</b> (côté '+NM(s.a)+'-'+NM(s.c)+') : <span class="y">'+(s.S1.length?L(s.S1):'vide')+'</span><br>'
+        +'<b>S2</b> (côté '+NM(s.c)+'-'+NM(s.b)+') : <span class="v">'+(s.S2.length?L(s.S2):'vide')+'</span><br>'
+        +'Les arêtes '+NM(s.a)+'-'+NM(s.c)+' et '+NM(s.c)+'-'+NM(s.b)+' deviennent des côtés candidats de l\'enveloppe.';
+    }
+  }else{
+    cap.textContent='Enveloppe convexe obtenue : '+hullFinal.length+' sommets.';
+    det.innerHTML='<b>Sommets dans l\'ordre</b> : '+L(hullFinal)+'.<br>Les points restants (non entourés en cyan) sont à l\'intérieur et ne sont jamais sommets.';
+  }
+  document.getElementById('stepBtn').disabled=stp>n;
+  document.getElementById('prevBtn').disabled=stp===0;
+}
+document.getElementById('stepBtn').onclick=()=>{if(stp<=DSTEPS.length){stp++;drawDemo()}};
+document.getElementById('resetBtn').onclick=()=>{setupDemo();drawDemo()};
+document.getElementById('prevBtn').onclick=()=>{if(stp>0){stp--;drawDemo()}};
+
+drawDemo();
+
+/* ---------- Graphe de complexité ---------- */
+const cxC=document.getElementById('cx'),cxx=cxC.getContext('2d');
+const cnIn=document.getElementById('cn');
+function drawCx(prog=1){
+  const W=cxC.width,H3=cxC.height,pl=52,pb=38,pt=18,pr=18;
+  const N=+cnIn.value;
+  document.getElementById('cnv').textContent=N;
+  const xmax=60,ymax=3600;
+  const X=n=>pl+(n/xmax)*(W-pl-pr), Y=f=>H3-pb-(Math.min(f,ymax)/ymax)*(H3-pb-pt);
+  cxx.clearRect(0,0,W,H3);
+  cxx.strokeStyle='rgba(255,255,255,.18)';cxx.lineWidth=1;
+  for(let g=0;g<=4;g++){const y=Y(ymax*g/4);cxx.beginPath();cxx.moveTo(pl,y);cxx.lineTo(W-pr,y);cxx.stroke();cxx.fillStyle='#b9accf';cxx.font='11px JetBrains Mono, monospace';cxx.fillText(String(ymax*g/4),6,y+4)}
+  cxx.strokeStyle='#f5f0ff';cxx.lineWidth=2;cxx.beginPath();cxx.moveTo(pl,pt);cxx.lineTo(pl,H3-pb);cxx.lineTo(W-pr,H3-pb);cxx.stroke();
+  cxx.fillStyle='#b9accf';cxx.font='12px JetBrains Mono, monospace';cxx.fillText('n (nombre de points)',W/2-70,H3-10);
+  const curves=[[n=>n,'#00f0ff'],[n=>n*Math.log2(n),'#ffe600'],[n=>n*n,'#ff2e88']];
+  const nEnd=Math.max(1,xmax*prog);
+  curves.forEach(([f,col])=>{
+    cxx.strokeStyle=col;cxx.lineWidth=3;cxx.beginPath();
+    for(let n=1;n<=nEnd;n+=.25){const x=X(n),y=Y(f(n));n===1?cxx.moveTo(x,y):cxx.lineTo(x,y)}
+    const xe=X(nEnd),ye=Y(f(nEnd));cxx.lineTo(xe,ye);
+    cxx.stroke();
+  });
+  cxx.setLineDash([5,5]);cxx.strokeStyle='rgba(255,255,255,.5)';cxx.beginPath();cxx.moveTo(X(N),pt);cxx.lineTo(X(N),H3-pb);cxx.stroke();cxx.setLineDash([]);
+  curves.forEach(([f,col])=>{cxx.fillStyle=col;cxx.beginPath();cxx.arc(X(N),Y(f(N)),5,0,Math.PI*2);cxx.fill()});
+  cxx.font='12px JetBrains Mono, monospace';
+  if(prog<1)return;
+  cxx.fillStyle='#ff2e88';cxx.fillText('n²',W-pr-30,Y(3600)+14);cxx.fillStyle='#ffe600';cxx.fillText('n log n',W-pr-70,Y(3600*0.2)-6);cxx.fillStyle='#00f0ff';cxx.fillText('n',W-pr-20,Y(60)-6);
+  document.getElementById('cvals').innerHTML=
+    '<tr><td style="color:#00f0ff">n</td><td>'+N+'</td></tr>'
+   +'<tr><td style="color:#ffe600">n log₂ n</td><td>'+Math.round(N*Math.log2(N))+'</td></tr>'
+   +'<tr><td style="color:#ff2e88">n²</td><td>'+(N*N)+'</td></tr>';
+}
+cnIn.addEventListener('input',()=>drawCx());
+// animation : les courbes se tracent de gauche à droite à l'arrivée sur le slide
+function cxAnim(){const t0=performance.now();(function f(t){const p=Math.min(1,(t-t0)/2400);drawCx(p);if(p<1)requestAnimationFrame(f)})(t0)}
+
+/* ---------- Quiz ---------- */
+const QZ=[
+ {q:"Qu'est-ce que l'enveloppe convexe d'un ensemble de points ?",o:["Le plus grand polygone contenant les points","Le plus petit ensemble convexe qui contient tous les points","Le segment le plus long entre deux points"],a:1,e:"C'est l'élastique tendu autour des clous."},
+ {q:"Quel paradigme utilise QuickHull ?",o:["Programmation dynamique","Algorithme glouton","Diviser pour régner"],a:2,e:"Le problème est découpé en sous-problèmes résolus récursivement."},
+ {q:"Quelle est la complexité moyenne de QuickHull ?",o:["O(n)","O(n log n)","O(n²)"],a:1,e:"Le cas moyen est O(n log n) ; le pire cas est O(n²)."},
+ {q:"Quand QuickHull atteint-il le pire cas O(n²) ?",o:["Quand il y a beaucoup de points","Quand les points sont presque alignés ou le partage très déséquilibré","Quand il n'y a que 3 points"],a:1,e:"Un partage déséquilibré rend la récursion très profonde."},
+ {q:"Quel algorithme a une complexité O(n log h) ?",o:["La marche de Jarvis","Le parcours de Graham","L'algorithme de Chan"],a:2,e:"h est le nombre de sommets de l'enveloppe convexe."},
+ {q:"Quels sont les deux points de départ de QuickHull ?",o:["Les deux points les plus proches","Les points les plus à gauche et à droite","Deux points tirés au hasard"],a:1,e:"Ces deux extrêmes sont toujours des sommets de l'enveloppe convexe."},
+ {q:"Que fait FindHull lorsque l'ensemble Sk est vide ?",o:["Il ajoute un point au hasard","Il retourne sans rien ajouter","Il recommence avec S1"],a:1,e:"Le segment [PQ] est alors un côté de l'enveloppe."},
+ {q:"Quel point est choisi à chaque appel de FindHull ?",o:["Le point le plus proche de P","Le point le plus éloigné de la droite [PQ]","Le point du milieu de Sk"],a:1,e:"Ce point forme avec P et Q le plus grand triangle, et devient un sommet."},
+ {q:"Pourquoi les points du triangle PCQ sont-ils éliminés ?",o:["Ils sont à l'intérieur de l'enveloppe, donc ne peuvent pas être sommets","Ils sont trop proches du bord","Ils sont sur la droite [PQ]"],a:0,e:"Un point à l'intérieur du triangle ne peut pas être un sommet de l'enveloppe."},
+ {q:"Quelle est la complexité de l'algorithme de Graham ?",o:["O(n²)","O(n log n)","O(n)"],a:1,e:"Il trie les points par angle, d'où le terme n log n."}
+];
+let qi=0,qs=0,answered=false;
+function renderQ(){
+  answered=false;
+  const q=QZ[qi];
+  document.getElementById('qnum').textContent='QUESTION '+(qi+1)+' / '+QZ.length;
+  document.getElementById('qtext').textContent=q.q;
+  const box=document.getElementById('qopts');box.innerHTML='';
+  q.o.forEach((t,i)=>{
+    const b=document.createElement('button');b.className='opt';b.textContent=t;
+    b.onclick=()=>choose(i);box.appendChild(b);
+  });
+  document.getElementById('qexp').textContent='';
+  document.getElementById('qnext').disabled=true;
+  document.getElementById('qnext').textContent=qi===QZ.length-1?'Voir le score':'Question suivante';
+  document.getElementById('qscore').textContent='Score : '+qs;
+}
+function choose(i){
+  if(answered)return;answered=true;
+  const q=QZ[qi];const btns=[...document.querySelectorAll('#qopts .opt')];
+  btns.forEach(b=>b.disabled=true);
+  btns[q.a].classList.add('ok');
+  if(i===q.a){qs++}else btns[i].classList.add('no');
+  document.getElementById('qexp').textContent=(i===q.a?'Bonne réponse. ':'Mauvaise réponse. ')+q.e;
+  document.getElementById('qscore').textContent='Score : '+qs;
+  document.getElementById('qnext').disabled=false;
+}
+document.getElementById('qnext').onclick=()=>{
+  if(qi<QZ.length-1){qi++;renderQ()}
+  else{
+    const box=document.getElementById('qopts');
+    document.getElementById('qtext').textContent=qs>=6?'Quiz terminé : trophée débloqué !':'Quiz terminé !';
+    box.innerHTML='<p class="big">'+qs+' / '+QZ.length+'</p><p class="lead" style="margin-top:10px">'+(qs===QZ.length?'Parfait : vous maîtrisez QuickHull.':qs>=6?'Bien joué, revoyez les points faibles.':'Relisez la partie complexité et l\'algorithme.')+'</p>';
+    document.getElementById('qexp').textContent='';
+    document.getElementById('qnext').disabled=true;
+    document.getElementById('qnum').textContent='RÉSULTAT';
+    document.getElementById('qscore').textContent='Score final : '+qs;
+  }
+};
+renderQ();
+
+/* ---------- Célébration : nouvelle diapositive vide, message BRAVO L'ÉQUIPE, confettis et fanfare ---------- */
+const confC=document.getElementById('conf'),confx=confC.getContext('2d');
+let confTimer=null,bravoSlide=null;
+let fwTimer=null,fwParts=[],fwAC=null;
+function fwSound(){
+  try{
+    if(!fwAC){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;fwAC=new AC();}
+    const len=.7,buf=fwAC.createBuffer(1,Math.floor(fwAC.sampleRate*len),fwAC.sampleRate),ch=buf.getChannelData(0);
+    for(let k=0;k<ch.length;k++)ch[k]=(Math.random()*2-1)*Math.pow(1-k/ch.length,2.5);
+    const s=fwAC.createBufferSource(),g=fwAC.createGain();
+    g.gain.value=.55;s.buffer=buf;s.connect(g);g.connect(fwAC.destination);s.start();
+  }catch(e){}
+}
+function fwBurst(x,y){
+  const cols=['#ff2e88','#ffe600','#00f0ff','#b79bff','#00ffa0','#ffffff'];
+  const c=cols[Math.floor(Math.random()*cols.length)];
+  for(let k=0;k<70;k++){const a=Math.random()*Math.PI*2,v=Math.random()*5+2;fwParts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,c});}
+  fwSound();
+}
+function startFireworks(){
+  confC.width=innerWidth;confC.height=innerHeight;
+  clearInterval(fwTimer);fwParts=[];
+  let t=0;
+  fwTimer=setInterval(()=>{
+    t++;
+    if(t%28===1)fwBurst(innerWidth*(.15+Math.random()*.7),innerHeight*(.15+Math.random()*.45));
+    fwParts.forEach(p=>{p.vy+=.08;p.vx*=.98;p.x+=p.vx;p.y+=p.vy;p.life-=.015;});
+    fwParts=fwParts.filter(p=>p.life>0);
+    confx.clearRect(0,0,confC.width,confC.height);
+    fwParts.forEach(p=>{confx.globalAlpha=Math.max(p.life,0);confx.fillStyle=p.c;confx.beginPath();confx.arc(p.x,p.y,2.6,0,Math.PI*2);confx.fill();});
+    confx.globalAlpha=1;
+    if(t>=400){clearInterval(fwTimer);fwTimer=null;confx.clearRect(0,0,confC.width,confC.height);}
+  },16);
+}
+function endChime(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return;
+    const ac=new AC(); const t0=ac.currentTime+.05;
+    [[659,0],[784,.22],[988,.44],[1319,.72]].forEach(([f,t])=>{
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0,t0+t);g.gain.linearRampToValueAtTime(.16,t0+t+.02);
+      g.gain.exponentialRampToValueAtTime(.001,t0+t+1.4);
+      o.connect(g);g.connect(ac.destination);o.start(t0+t);o.stop(t0+t+1.5);
+    });
+  }catch(e){}
+}
+function fanfare(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return;
+    const ac=new AC(); const t0=ac.currentTime+0.05;
+    const tone=(f,t,d,type,vol)=>{
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type=type;o.frequency.value=f;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.02);
+      g.gain.exponentialRampToValueAtTime(.001,t+d);
+      o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d+.05);
+    };
+    const drum=(t,vol)=>{
+      const len=.14,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*len),ac.sampleRate),ch=buf.getChannelData(0);
+      for(let k=0;k<ch.length;k++)ch[k]=(Math.random()*2-1)*Math.pow(1-k/ch.length,3);
+      const s=ac.createBufferSource(),g=ac.createGain();
+      s.buffer=buf;g.gain.value=vol;s.connect(g);g.connect(ac.destination);s.start(t);
+    };
+    const e=60/120/2; // une croche à 120 BPM
+    // mélodie (originale)
+    const mel=[[523,1],[659,1],[784,1],[1047,2],[988,1],[1047,3],[784,1],[880,1],[988,1],[1047,2],[784,1],[1047,4]];
+    let t=t0;
+    mel.forEach(([f,d])=>{tone(f,t,d*e*.9,'square',.12);t+=d*e;});
+    // basse
+    [131,131,196,196,220,220,196,196].forEach((f,k)=>tone(f,t0+k*e*2,e*1.8,'triangle',.28));
+    // batterie : grosse caisse et caisse claire
+    for(let k=0;k<16;k++){ if(k%4===0)drum(t0+k*e,.6); else if(k%4===2)drum(t0+k*e,.3); }
+  }catch(err){}
+}
+function confetti(){
+  confC.width=innerWidth;confC.height=innerHeight;
+  const colors=['#ff2e88','#ffe600','#00f0ff','#b79bff','#00ffa0'];
+  const ps=[];
+  for(let i=0;i<220;i++){
+    const side=i%2?-1:1;
+    ps.push({x:innerWidth/2+side*(innerWidth*.35),y:innerHeight*.9,vx:-side*(Math.random()*12+4),vy:-(Math.random()*20+12),
+      s:Math.random()*8+5,c:colors[i%colors.length],r:Math.random()*6,vr:(Math.random()-.5)*.4,g:.42});
+  }
+  clearInterval(confTimer);
+  let frames=0;
+  confTimer=setInterval(()=>{
+    confx.clearRect(0,0,confC.width,confC.height);
+    ps.forEach(p=>{
+      p.vy+=p.g;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;
+      confx.save();confx.translate(p.x,p.y);confx.rotate(p.r);
+      confx.fillStyle=p.c;confx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);confx.restore();
+    });
+    frames++;
+    if(frames>200){clearInterval(confTimer);confx.clearRect(0,0,confC.width,confC.height)}
+  },16);
+}
+function celebrate(){
+  confetti();
+  fanfare();
+  go(cur+1);
+}
+document.getElementById('celebrate').onclick=celebrate;
+
+/* ---------- Démarrage et boucle ---------- */
+cvxM.size();concM.size();orbM.size();
+drawCx();
+go(0);
+function loop(){
+  requestAnimationFrame(loop);
+  [orbM,cvxM,concM].forEach(o=>{if(o.cv.clientWidth!==o.w||o.cv.clientHeight!==o.h)o.size()});
+  if(!orbM.down&&Date.now()-orbM.last>1500)orbM.g.rotation.y+=.008;
+  orbM.r.render(orbM.sc,orbM.cm);
+  if(!cvxM.down&&Date.now()-cvxM.last>1500)cvxM.g.rotation.y+=.01;
+  cvxM.r.render(cvxM.sc,cvxM.cm);
+  if(!concM.down&&Date.now()-concM.last>1500)concM.g.rotation.y+=.01;
+  concM.r.render(concM.sc,concM.cm);
+}
+loop();
+addEventListener('resize',()=>{cvxM.size();concM.size();orbM.size();drawCx()});
+</script>
+
+<script>
+/* ---------- Applications : un exemple animé par carte ---------- */
+(()=>{
+const W=640,H=420;
+const cross=(o,a,b)=>(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x);
+/* enveloppe convexe (chaîne monotone), renvoie les sommets dans l'ordre */
+function hullOf(P){
+  if(P.length<3)return P.slice();
+  const s=[...P].sort((a,b)=>a.x-b.x||a.y-b.y),lo=[],up=[];
+  for(const p of s){while(lo.length>=2&&cross(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p)}
+  for(const p of s.slice().reverse()){while(up.length>=2&&cross(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p)}
+  return lo.slice(0,-1).concat(up.slice(0,-1));
+}
+function inside(Hp,p){
+  let pos=false,neg=false;
+  for(let i=0;i<Hp.length;i++){const v=cross(Hp[i],Hp[(i+1)%Hp.length],p);if(v>0)pos=true;if(v<0)neg=true;if(pos&&neg)return false}
+  return true;
+}
+/* séparation sur les axes (SAT) : true si les deux polygones se touchent */
+function sat(A,B){
+  for(const Pp of[A,B])for(let i=0;i<Pp.length;i++){
+    const p=Pp[i],q=Pp[(i+1)%Pp.length],nx=q.y-p.y,ny=p.x-q.x;
+    let a0=1e9,a1=-1e9,b0=1e9,b1=-1e9;
+    A.forEach(v=>{const d=v.x*nx+v.y*ny;a0=Math.min(a0,d);a1=Math.max(a1,d)});
+    B.forEach(v=>{const d=v.x*nx+v.y*ny;b0=Math.min(b0,d);b1=Math.max(b1,d)});
+    if(a1<b0||b1<a0)return false;
+  }
+  return true;
+}
+function area(P){let a=0;P.forEach((p,i)=>{const q=P[(i+1)%P.length];a+=p.x*q.y-q.x*p.y});return Math.abs(a)/2}
+function perim(P){let l=0;P.forEach((p,i)=>{const q=P[(i+1)%P.length];l+=Math.hypot(q.x-p.x,q.y-p.y)});return l}
+const rgba=(h,a)=>{const n=parseInt(h.slice(1),16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')'};
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function cloud(cx,cy,r,n){return Array.from({length:n},()=>{const t=Math.random()*6.283,d=Math.sqrt(Math.random())*r;return{x:cx+Math.cos(t)*d,y:cy+Math.sin(t)*d*.7}})}
+function poly(x,P,fill,stroke,w){x.beginPath();P.forEach((p,i)=>i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y));x.closePath();if(fill){x.fillStyle=fill;x.fill()}if(stroke){x.strokeStyle=stroke;x.lineWidth=w||3;x.stroke()}}
+function dot(x,p,col,r,glow){x.beginPath();x.arc(p.x,p.y,r,0,6.283);x.fillStyle=col;x.shadowColor=col;x.shadowBlur=glow?16:0;x.fill();x.shadowBlur=0}
+function txt(x,s,p,col,size){x.font='700 '+(size||16)+'px "JetBrains Mono",monospace';x.fillStyle=col;x.fillText(s,p.x,p.y)}
+
+/* chaque visuel : {title, desc, init(), draw(x,t), click(p), move(p), info()} */
+const V={};
+
+V.robot={
+  title:'🤖 Robotique : éviter les obstacles',
+  desc:'Chaque obstacle est enveloppé dans son enveloppe convexe. Tester une collision revient à tester si le robot est à l\'intérieur d\'un polygone convexe : c\'est très rapide. Bougez la souris : vous êtes le robot.',
+  init(){this.obs=[[150,140],[470,120],[420,300],[140,320]].map(([a,b])=>hullOf(cloud(a,b,62,7)));this.m={x:320,y:210}},
+  move(p){this.m=p},
+  draw(x){
+    let hit=false;
+    this.obs.forEach(Hp=>{const h=inside(Hp,this.m);hit=hit||h;poly(x,Hp,h?'rgba(255,46,136,.35)':'rgba(255,230,0,.12)',h?'#ff2e88':'#ffe600',3)});
+    dot(x,this.m,hit?'#ff2e88':'#00f0ff',13,true);
+    txt(x,hit?'💥 COLLISION !':'Trajectoire libre ✔',{x:18,y:32},hit?'#ff2e88':'#7dff8a',17);
+  },
+  info(){return 'Le robot suit la souris. Rose = le robot est dans un obstacle.'}
+};
+
+V.data={
+  title:'📊 Analyse de données : groupes et enveloppes',
+  desc:'Chaque groupe est entouré de son enveloppe convexe : on voit d\'un coup d\'œil sa forme et l\'espace qu\'il occupe. Cliquez n\'importe où pour ajouter un point au groupe le plus proche.',
+  cols:['#ffe600','#00f0ff','#b79bff'],
+  init(){this.g=[[170,150],[460,130],[320,310]].map(([a,b])=>cloud(a,b,85,9))},
+  click(p){let bi=0,bd=1e9;this.g.forEach((G,i)=>{const d=Math.min(...G.map(q=>Math.hypot(q.x-p.x,q.y-p.y)));if(d<bd){bd=d;bi=i}});this.g[bi].push(p)},
+  draw(x){
+    this.g.forEach((G,i)=>{const c=this.cols[i],Hp=hullOf(G);poly(x,Hp,rgba(c,.12),c,3);G.forEach(q=>dot(x,q,c,5))});
+  },
+  info(){return this.g.map((G,i)=>'Groupe '+(i+1)+' : '+G.length+' pts, aire ≈ '+Math.round(area(hullOf(G)))+' px²').join('   ·   ')}
+};
+
+V.game={
+  title:'🎮 Jeux vidéo : détecter les collisions',
+  desc:'Deux formes convexes se touchent-elles ? Le test SAT projette les deux formes sur les normales de leurs côtés : s\'il existe un axe qui les sépare, il n\'y a pas de collision. Déplacez le vaisseau : évitez les astéroïdes.',
+  init(){this.ast=[[140,120],[470,110],[500,310],[170,320]].map(([a,b])=>({c:{x:a,y:b},o:hullOf(cloud(0,0,38,7)),ph:Math.random()*6}));this.m={x:320,y:210}},
+  move(p){this.m=p},
+  draw(x,t){
+    const sh=hullOf([{x:0,y:-26},{x:20,y:18},{x:-20,y:18}].map(q=>({x:q.x+this.m.x,y:q.y+this.m.y})));
+    let hit=false;
+    this.ast.forEach(a=>{
+      const c={x:a.c.x+Math.sin(t/900+a.ph)*26,y:a.c.y+Math.cos(t/1100+a.ph)*18};
+      const Hp=a.o.map(q=>({x:c.x+q.x,y:c.y+q.y})),h=sat(sh,Hp);hit=hit||h;
+      poly(x,Hp,h?'rgba(255,46,136,.4)':'rgba(138,143,163,.25)',h?'#ff2e88':'#9a9ab0',3);
+    });
+    poly(x,sh,hit?'#ff2e88':'#00f0ff','#ffffff',2);
+    txt(x,hit?'💥 Collision !':'Pas de collision',{x:18,y:32},hit?'#ff2e88':'#7dff8a',17);
+  },
+  info(){return 'Test SAT : on cherche un axe qui sépare le vaisseau et l\'astéroïde.'}
+};
+
+V.image={
+  title:'🖼️ Traitement d\'images : compter les doigts',
+  desc:'On calcule l\'enveloppe convexe de la main, puis on repère les creux (défauts de convexité) entre l\'enveloppe et le contour. Doigts = creux + 1. Cliquez pour changer le nombre de doigts.',
+  init(){this.k=3},
+  click(){this.k=this.k%5+1},
+  draw(x){
+    const k=this.k,tips=[],vals=[];
+    for(let i=0;i<k;i++){tips.push({x:k==1?320:170+i*300/(k-1),y:110+Math.abs(i-(k-1)/2)*40})}
+    for(let i=0;i<k-1;i++){vals.push({x:(tips[i].x+tips[i+1].x)/2,y:250})}
+    const contour=[{x:170,y:360}];
+    tips.forEach((t,i)=>{contour.push(t);if(i<k-1)contour.push(vals[i])});
+    contour.push({x:470,y:360});
+    const Hp=hullOf(contour);
+    poly(x,Hp,'rgba(255,230,0,.12)','#ffe600',3);
+    poly(x,contour,'rgba(255,230,0,.08)',null);
+    tips.forEach(t=>dot(x,t,'#ffffff',6));
+    vals.forEach(v=>dot(x,v,'#ff2e88',9,true));
+    txt(x,'Creux : '+(k-1)+'  →  doigts : '+k,{x:18,y:32},'#ff2e88',17);
+  },
+  info(){return 'Cliquez pour changer le nombre de doigts (1 à 5).'}
+};
+
+V.drone={
+  title:'🛸 Drones : la zone minimale à survoler',
+  desc:'Le drone doit passer au-dessus de tous les colis : l\'enveloppe convexe des colis donne la plus petite zone à survoler. Cliquez pour ajouter un colis.',
+  init(){this.p=cloud(320,210,190,9);this.t=0},
+  click(p){this.p.push(p)},
+  draw(x,t){
+    const Hp=hullOf(this.p);
+    poly(x,Hp,'rgba(255,230,0,.12)','#ffe600',3);
+    this.p.forEach(q=>dot(x,q,'#ffffff',6));
+    const L=perim(Hp),s=((t/25)%L+L)%L;
+    let acc=0,pos=Hp[0];
+    for(let i=0;i<Hp.length;i++){const a=Hp[i],b=Hp[(i+1)%Hp.length],l=Math.hypot(b.x-a.x,b.y-a.y);if(acc+l>=s){const f=(s-acc)/l;pos={x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f};break}acc+=l}
+    dot(x,pos,'#00f0ff',9,true);
+    txt(x,'Zone minimale',{x:18,y:32},'#ffe600',17);
+  },
+  info(){return 'Aire ≈ '+Math.round(area(hullOf(this.p)))+' px²   ·   périmètre ≈ '+Math.round(perim(hullOf(this.p)))+' px   ·   '+this.p.length+' colis'}
+};
+
+/* ---- ouverture / fermeture de la fenêtre ---- */
+const modal=document.getElementById('appModal'),C=document.getElementById('amC'),x=C.getContext('2d');
+let cur=null,raf=0;
+function scale(e){const r=C.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}}
+function loop(t){
+  if(!cur)return;
+  x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,W,H);
+  cur.draw(x,t);
+  document.getElementById('amH').textContent=cur.info();
+  raf=requestAnimationFrame(loop);
+}
+function open(key){
+  cur=V[key];
+  cur.init();
+  document.getElementById('amT').textContent=cur.title;
+  document.getElementById('amD').textContent=cur.desc;
+  modal.hidden=false;
+  document.getElementById('amClose').focus();
+  cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+}
+function close(){modal.hidden=true;cur=null;cancelAnimationFrame(raf)}
+document.querySelectorAll('.app-card').forEach(card=>{
+  const h=card.querySelector('div:last-child');
+  if(h&&!h.querySelector('.hint')){const s=document.createElement('span');s.className='hint';s.textContent='Voir l\'exemple →';h.appendChild(s)}
+  card.addEventListener('click',()=>open(card.dataset.app));
+  card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(card.dataset.app)}});
+});
+document.getElementById('amClose').onclick=close;
+modal.addEventListener('click',e=>{if(e.target===modal)close()});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)close()});
+C.addEventListener('pointermove',e=>{if(cur&&cur.move)cur.move(scale(e))});
+C.addEventListener('pointerdown',e=>{if(!cur)return;const p=scale(e);if(cur.click)cur.click(p)});
+C.addEventListener('pointerdown',e=>{if(cur&&cur.move)cur.move(scale(e))});
+
+/* ---- Exercice : tracer l'enveloppe, comme dans le fichier de référence ---- */
+const EX=[[5,210,62],[8,138,102],[7,497,78],[6,631,89],[15,378,125],[13,168,204],[3,365,224],[4,551,251],[10,719,251],[1,71,269],[12,313,308],[14,203,331],[11,476,380],[2,263,434],[9,613,435]].map(([id,x,y])=>({id,x,y}));
+const ec=document.getElementById('exc'),ex=ec&&ec.getContext('2d');
+let exH=[],exStep=0,exT=0,exRun=false,exRaf=0;
+function exDraw(){
+  if(!ex)return;
+  ex.clearRect(0,0,800,500);
+  const inH=new Set(exH.map(p=>p.id));
+  if(exH.length>2){
+    ex.beginPath();
+    const n=Math.min(exStep,exH.length);
+    exH.slice(0,n).forEach((p,i)=>i?ex.lineTo(p.x,p.y):ex.moveTo(p.x,p.y));
+    if(n===exH.length){ex.closePath();ex.fillStyle='rgba(0,240,255,.12)';ex.fill()}
+    ex.strokeStyle='#00f0ff';ex.lineWidth=4;ex.stroke();
+  }
+  EX.forEach(p=>{
+    const onH=inH.has(p.id)&&exStep>=exH.length;
+    ex.beginPath();ex.arc(p.x,p.y,onH?11:8,0,6.283);
+    ex.fillStyle=onH?'#00f0ff':(exRun&&inH.has(p.id)&&exStep>0?'#ffe600':'#ffffff');ex.fill();
+    ex.font='700 22px "JetBrains Mono",monospace';ex.fillStyle=onH?'#00f0ff':'#b9accf';
+    ex.fillText(p.id,p.x+12,p.y-10);
+  });
+}
+function exStart(){
+  if(!ec)return;
+  cancelAnimationFrame(exRaf);
+  exH=hullOf(EX.map(p=>({x:p.x,y:p.y,id:p.id})));
+  exStep=0;exRun=true;exT=performance.now();
+  document.getElementById('exs').textContent='Sommets trouvés : 0 / '+exH.length;
+  const tick=t=>{
+    if(!exRun)return;
+    if(t-exT>600&&exStep<exH.length){exStep++;exT=t;document.getElementById('exs').textContent='Sommets trouvés : '+exStep+' / '+exH.length}
+    exDraw();
+    if(exStep<exH.length||t-exT<2000)exRaf=requestAnimationFrame(tick);else exRun=false;
+  };
+  exRaf=requestAnimationFrame(tick);
+}
+function exReset(){
+  cancelAnimationFrame(exRaf);exRun=false;exH=[];exStep=0;
+  document.getElementById('exs').textContent='';
+  if(ec){ex.clearRect(0,0,800,500);EX.forEach(p=>{ex.beginPath();ex.arc(p.x,p.y,8,0,6.283);ex.fillStyle='#ffffff';ex.fill();ex.font='700 22px "JetBrains Mono",monospace';ex.fillStyle='#b9accf';ex.fillText(p.id,p.x+12,p.y-10)})}
+}
+if(ec){
+  document.getElementById('exb').onclick=exStart;
+  document.getElementById('exr').onclick=exReset;
+  exReset();
+}
+})();
+
+</script>
+
+
+<script>
+(()=>{
+ const info={
+  graham:{name:'Ronald Lewis Graham',role:'Mathématicien américain · 1935–2020',complexity:'O(n log n)',photo:'https://mathshistory.st-andrews.ac.uk/Biographies/Graham/Graham.jpeg',alt:'Portrait de Ronald Lewis Graham',html:'<p><strong>Son idée :</strong> trier les points autour du point le plus bas, selon leur angle polaire, puis parcourir cette liste avec une pile.</p><p><strong>Comment ça marche ?</strong> On ajoute les points un par un. Si les trois derniers points forment un virage qui ne convient pas à l’enveloppe convexe, on retire le point du milieu de la pile. À la fin, la pile contient les sommets de l’enveloppe.</p><p><strong>À retenir :</strong> le tri coûte O(n log n), puis le balayage coûte O(n). Le tri domine donc le temps total.</p>',source:'Portrait et biographie : <a href="https://mathshistory.st-andrews.ac.uk/Biographies/Graham/" target="_blank" rel="noopener">MacTutor · University of St Andrews</a>'},
+  jarvis:{name:'R. A. Jarvis',role:'Chercheur · article publié en 1973',complexity:'O(nh)',photo:null,alt:'Illustration symbolique pour R. A. Jarvis',html:'<p><strong>Son idée :</strong> construire l’enveloppe comme si l’on emballait les points avec une ficelle — c’est pourquoi on l’appelle aussi <em>Gift Wrapping</em>.</p><p><strong>Comment ça marche ?</strong> On commence par un point extrême, puis on choisit à chaque étape le prochain point qui crée le plus grand virage dans le bon sens. On répète jusqu’à revenir au point de départ.</p><p><strong>Complexité :</strong> O(nh), où n est le nombre total de points et h le nombre de sommets de l’enveloppe. Dans le pire cas, h = n, donc O(n²).</p>',source:'Article original : <a href="https://doi.org/10.1016/0020-0190(73)90020-3" target="_blank" rel="noopener">R. A. Jarvis, 1973</a>'},
+  chan:{name:'Timothy M. Chan',role:'Informaticien · géométrie algorithmique',complexity:'O(n log h)',photo:'https://tmc.web.engr.illinois.edu/timothy2014.jpg',alt:'Portrait de Timothy M. Chan',html:'<p><strong>Son idée :</strong> obtenir une méthode très efficace en combinant des idées de Graham Scan et de Jarvis March.</p><p><strong>Comment ça marche ?</strong> L’algorithme découpe les points en petits groupes, calcule l’enveloppe de chaque groupe, puis utilise une étape de type Jarvis pour assembler le résultat. Il ajuste progressivement une estimation de h, le nombre de sommets de l’enveloppe.</p><p><strong>À retenir :</strong> sa complexité est O(n log h), avec h le nombre de sommets de l’enveloppe convexe.</p>',source:'Photo et profil : <a href="https://tmc.web.engr.illinois.edu/" target="_blank" rel="noopener">University of Illinois · Timothy M. Chan</a>'}
+ };
+ const modal=document.getElementById('algoModal');
+ function openAlgo(key){const a=info[key];if(!a)return;document.getElementById('algoTitle').textContent=a.name;document.getElementById('algoTag').textContent=a.role;document.getElementById('algoComplexity').textContent=a.complexity;document.getElementById('algoText').innerHTML=a.html;document.getElementById('algoSource').innerHTML=a.source;document.getElementById('algoPhoto').innerHTML=a.photo?'<img class="algo-portrait" src="'+a.photo+'" alt="'+a.alt+'" loading="lazy">':'<div class="algo-placeholder" aria-label="Visuel symbolique"><span>R.A.J.</span><small>GIFT WRAPPING<br>VISUEL SYMBOLIQUE</small></div>';modal.hidden=false;document.getElementById('algoClose').focus();}
+ function closeAlgo(){modal.hidden=true;}
+ document.querySelectorAll('.algo-card').forEach(card=>{card.addEventListener('click',()=>openAlgo(card.dataset.algo));card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAlgo(card.dataset.algo);}})});
+ document.getElementById('algoClose').addEventListener('click',closeAlgo);modal.addEventListener('click',e=>{if(e.target===modal)closeAlgo()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)closeAlgo()});
+})();
+</script>
+
+</body></html>

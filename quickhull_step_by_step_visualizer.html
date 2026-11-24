@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuickHull Python Visualizer — Step-by-Step Execution</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            ide: {
+              bg: '#090b10',
+              panel: '#0f131c',
+              card: '#151b28',
+              border: '#232c3f',
+              code: '#05070a',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #090b10;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Custom subtle scrollbars for IDE feel */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0e14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #28334a;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3b4b6b;
+    }
+
+    /* Syntax highlighting matching user's IDE screenshot */
+    .syn-kw { color: #ff2e88; font-weight: 600; }     /* def, if, return, for, in, not, lambda */
+    .syn-fn { color: #22d3ee; font-weight: 600; }     /* quickhull, cross, find_hull, len, min, max, print */
+    .syn-num { color: #facc15; }                      /* numbers */
+    .syn-com { color: #64748b; font-style: italic; }  /* comments */
+    .syn-op { color: #94a3b8; }                       /* operators */
+    .syn-var { color: #f1f5f9; }                      /* variables */
+
+    /* Active code line glow */
+    .code-line {
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+      border-left: 3px solid transparent;
+    }
+    .code-line.active-line {
+      background: linear-gradient(90deg, rgba(34, 211, 238, 0.20) 0%, rgba(34, 211, 238, 0.05) 100%);
+      border-left-color: #22d3ee;
+      box-shadow: inset 0 0 14px rgba(34, 211, 238, 0.14);
+    }
+
+    /* Range slider styling */
+    input[type="range"] {
+      accent-color: #22d3ee;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col bg-ide-bg text-slate-200 selection:bg-cyan-500/30">
+
+  <!-- Top Navigation & Dataset Presets Bar -->
+  <header class="shrink-0 border-b border-ide-border bg-ide-panel/95 backdrop-blur z-30">
+    <div class="w-full px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+      <!-- Brand / Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <svg class="w-5 h-5 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <polygon points="12 3 21 9 18 20 6 20 3 9" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight text-white leading-tight">
+            QuickHull <span class="text-cyan-400 font-mono text-sm font-semibold">Python Visualizer</span>
+          </h1>
+          <p class="text-xs text-slate-400">Exact line-by-line execution trace &amp; geometric intuition</p>
+        </div>
+      </div>
+
+      <!-- Preset Selector Pills -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-medium text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">Dataset:</span>
+        <button id="preset-course" data-preset="course"
+          class="preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border border-cyan-400/60 bg-cyan-400/15 text-cyan-300 shadow-sm shadow-cyan-500/10">
+          Course Example (7 pts)
+        </button>
+        <button id="preset-random" data-preset="random"
+          class="preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border border-ide-border bg-ide-card text-slate-300 hover:border-slate-500 hover:text-white">
+          Random (10 pts)
+        </button>
+        <button id="preset-worst" data-preset="worst"
+          class="preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border border-ide-border bg-ide-card text-slate-300 hover:border-amber-500/60 hover:text-amber-300">
+          Worst Case (Arc)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Responsive Split Workspace -->
+  <main class="flex-1 min-h-0 w-full p-2.5 sm:p-3 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-hidden">
+
+    <!-- LEFT / MAIN PANEL: Canvas, Legend, Explanation Banner, Playback Controls -->
+    <section class="lg:col-span-7 h-full min-h-0 flex flex-col gap-2.5">
+
+      <!-- Canvas Card -->
+      <div class="flex-1 min-h-0 bg-ide-panel border border-ide-border rounded-2xl overflow-hidden shadow-xl flex flex-col">
+        <!-- Canvas Header & Legend -->
+        <div class="shrink-0 px-3.5 py-2 border-b border-ide-border flex flex-wrap items-center justify-between gap-2 bg-ide-card/50">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">2D Cartesian Plane</span>
+          </div>
+          <!-- Color Legend -->
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-300">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>A / B / p,q</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>Farthest c</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>up / S1</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-fuchsia-400"></span>down / S2</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>Hull</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-600 border border-slate-400"></span>Discarded</span>
+          </div>
+        </div>
+
+        <!-- Responsive Canvas Container -->
+        <div id="canvas-wrapper" class="relative w-full flex-1 min-h-[140px] bg-[#070a10]">
+          <canvas id="hull-canvas" class="block w-full h-full"></canvas>
+          <!-- Subtle floating phase badge -->
+          <div id="phase-badge" class="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-slate-900/85 border border-slate-700/80 text-[11px] font-mono text-cyan-300 backdrop-blur-sm pointer-events-none">
+            INIT
+          </div>
+        </div>
+
+        <!-- Playback Controls Bar -->
+        <div class="shrink-0 p-2.5 sm:px-3.5 border-t border-ide-border bg-ide-card/60 flex flex-col gap-2">
+          <!-- Progress Scrubber -->
+          <div class="flex items-center gap-3">
+            <span id="step-counter" class="text-xs font-mono font-semibold text-cyan-300 min-w-[78px]">Step 1 / 1</span>
+            <input id="step-slider" type="range" min="0" max="0" value="0"
+              class="flex-1 h-1.5 bg-slate-700 rounded-lg cursor-pointer" aria-label="Animation step scrubber" />
+            <span id="step-percent" class="text-xs font-mono text-slate-400 min-w-[38px] text-right">0%</span>
+          </div>
+
+          <!-- Buttons & Speed -->
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <button id="btn-reset" title="Reset (R)"
+                class="p-2.5 rounded-xl bg-ide-panel border border-ide-border hover:border-slate-500 text-slate-300 hover:text-white transition-all active:scale-95">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <button id="btn-prev" title="Step Back (Left Arrow)"
+                class="px-3 py-2 rounded-xl bg-ide-panel border border-ide-border hover:border-slate-500 text-slate-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="hidden sm:inline">Back</span>
+              </button>
+              <button id="btn-play" title="Play / Pause (Space)"
+                class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-cyan-500/25 transition-all active:scale-95 min-w-[96px] justify-center">
+                <svg id="icon-play" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                <svg id="icon-pause" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z" /></svg>
+                <span id="label-play">Play</span>
+              </button>
+              <button id="btn-next" title="Step Forward (Right Arrow)"
+                class="px-3 py-2 rounded-xl bg-ide-panel border border-ide-border hover:border-slate-500 text-slate-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95">
+                <span class="hidden sm:inline">Next</span>
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Speed Slider -->
+            <div class="flex items-center gap-2 bg-ide-panel px-3 py-1.5 rounded-xl border border-ide-border">
+              <span class="text-[11px] font-medium text-slate-400">Speed</span>
+              <input id="speed-slider" type="range" min="0.5" max="3" step="0.25" value="1" class="w-20 sm:w-24 h-1.5 cursor-pointer" />
+              <span id="speed-label" class="text-xs font-mono font-semibold text-cyan-300 min-w-[34px] text-right">1.0x</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step Explanation & Math Banner -->
+      <div class="shrink-0 bg-ide-panel border border-ide-border rounded-2xl p-3 shadow-lg">
+        <div class="flex items-start gap-3">
+          <div id="step-icon" class="mt-0.5 w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center shrink-0 text-cyan-400">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <h2 id="step-title" class="text-sm font-bold text-white">Ready to Trace</h2>
+              <span id="step-line-badge" class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-800 text-cyan-300 border border-slate-700">Line 22</span>
+            </div>
+            <p id="step-desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed"></p>
+            <!-- Exact cross() math breakdown chips -->
+            <div id="step-math" class="mt-2.5 hidden flex-wrap gap-1.5"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Syntax-Highlighted Python Code -->
+    <section class="lg:col-span-5 h-full min-h-0 flex flex-col">
+
+      <!-- Python Code Viewer -->
+      <div class="flex-1 min-h-0 bg-ide-code border border-ide-border rounded-2xl overflow-hidden shadow-xl flex flex-col">
+        <div class="shrink-0 px-4 py-2.5 border-b border-ide-border bg-ide-panel flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400/80"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400/80"></span>
+            <span class="ml-1.5 text-xs font-mono text-slate-300">quickhull.py</span>
+          </div>
+          <span class="text-[11px] font-mono text-slate-500">Python 3</span>
+        </div>
+        <div id="code-container" class="flex-1 min-h-0 py-3 overflow-auto font-mono text-[12px] sm:text-[13px] leading-6 select-text">
+          <!-- Populated dynamically by JS -->
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. EXACT PYTHON SOURCE CODE DEFINITION (1-indexed lines for highlighting)
+    // =========================================================================
+    const CODE_LINES = [
+      { ln: 1,  html: `<span class="syn-kw">def</span> <span class="syn-fn">quickhull</span>(<span class="syn-var">points</span>):` },
+      { ln: 2,  html: `    <span class="syn-kw">if</span> <span class="syn-fn">len</span>(<span class="syn-var">points</span>) <span class="syn-op">&lt;</span> <span class="syn-num">3</span>:` },
+      { ln: 3,  html: `        <span class="syn-kw">return</span> <span class="syn-var">points</span>` },
+      { ln: 4,  html: `` },
+      { ln: 5,  html: `    <span class="syn-kw">def</span> <span class="syn-fn">cross</span>(<span class="syn-var">o</span>, <span class="syn-var">a</span>, <span class="syn-var">b</span>):` },
+      { ln: 6,  html: `        <span class="syn-kw">return</span> (<span class="syn-var">a</span>[<span class="syn-num">0</span>]<span class="syn-op">-</span><span class="syn-var">o</span>[<span class="syn-num">0</span>])<span class="syn-op">*</span>(<span class="syn-var">b</span>[<span class="syn-num">1</span>]<span class="syn-op">-</span><span class="syn-var">o</span>[<span class="syn-num">1</span>]) <span class="syn-op">-</span> (<span class="syn-var">a</span>[<span class="syn-num">1</span>]<span class="syn-op">-</span><span class="syn-var">o</span>[<span class="syn-num">1</span>])<span class="syn-op">*</span>(<span class="syn-var">b</span>[<span class="syn-num">0</span>]<span class="syn-op">-</span><span class="syn-var">o</span>[<span class="syn-num">0</span>])` },
+      { ln: 7,  html: `` },
+      { ln: 8,  html: `    <span class="syn-kw">def</span> <span class="syn-fn">find_hull</span>(<span class="syn-var">S</span>, <span class="syn-var">p</span>, <span class="syn-var">q</span>):` },
+      { ln: 9,  html: `        <span class="syn-kw">if not</span> <span class="syn-var">S</span>:` },
+      { ln: 10, html: `            <span class="syn-kw">return</span> []` },
+      { ln: 11, html: `        <span class="syn-var">c</span> <span class="syn-op">=</span> <span class="syn-fn">max</span>(<span class="syn-var">S</span>, <span class="syn-var">key</span><span class="syn-op">=</span><span class="syn-kw">lambda</span> <span class="syn-var">r</span>: <span class="syn-fn">cross</span>(<span class="syn-var">p</span>, <span class="syn-var">q</span>, <span class="syn-var">r</span>))` },
+      { ln: 12, html: `        <span class="syn-var">S1</span> <span class="syn-op">=</span> [<span class="syn-var">r</span> <span class="syn-kw">for</span> <span class="syn-var">r</span> <span class="syn-kw">in</span> <span class="syn-var">S</span> <span class="syn-kw">if</span> <span class="syn-fn">cross</span>(<span class="syn-var">p</span>, <span class="syn-var">c</span>, <span class="syn-var">r</span>) <span class="syn-op">&gt;</span> <span class="syn-num">0</span>]` },
+      { ln: 13, html: `        <span class="syn-var">S2</span> <span class="syn-op">=</span> [<span class="syn-var">r</span> <span class="syn-kw">for</span> <span class="syn-var">r</span> <span class="syn-kw">in</span> <span class="syn-var">S</span> <span class="syn-kw">if</span> <span class="syn-fn">cross</span>(<span class="syn-var">c</span>, <span class="syn-var">q</span>, <span class="syn-var">r</span>) <span class="syn-op">&gt;</span> <span class="syn-num">0</span>]` },
+      { ln: 14, html: `        <span class="syn-kw">return</span> <span class="syn-fn">find_hull</span>(<span class="syn-var">S1</span>, <span class="syn-var">p</span>, <span class="syn-var">c</span>) <span class="syn-op">+</span> [<span class="syn-var">c</span>] <span class="syn-op">+</span> <span class="syn-fn">find_hull</span>(<span class="syn-var">S2</span>, <span class="syn-var">c</span>, <span class="syn-var">q</span>)` },
+      { ln: 15, html: `` },
+      { ln: 16, html: `    <span class="syn-var">A</span>, <span class="syn-var">B</span> <span class="syn-op">=</span> <span class="syn-fn">min</span>(<span class="syn-var">points</span>), <span class="syn-fn">max</span>(<span class="syn-var">points</span>)` },
+      { ln: 17, html: `    <span class="syn-var">up</span>   <span class="syn-op">=</span> [<span class="syn-var">r</span> <span class="syn-kw">for</span> <span class="syn-var">r</span> <span class="syn-kw">in</span> <span class="syn-var">points</span> <span class="syn-kw">if</span> <span class="syn-fn">cross</span>(<span class="syn-var">A</span>, <span class="syn-var">B</span>, <span class="syn-var">r</span>) <span class="syn-op">&gt;</span> <span class="syn-num">0</span>]` },
+      { ln: 18, html: `    <span class="syn-var">down</span> <span class="syn-op">=</span> [<span class="syn-var">r</span> <span class="syn-kw">for</span> <span class="syn-var">r</span> <span class="syn-kw">in</span> <span class="syn-var">points</span> <span class="syn-kw">if</span> <span class="syn-fn">cross</span>(<span class="syn-var">B</span>, <span class="syn-var">A</span>, <span class="syn-var">r</span>) <span class="syn-op">&gt;</span> <span class="syn-num">0</span>]` },
+      { ln: 19, html: `    <span class="syn-kw">return</span> [<span class="syn-var">A</span>] <span class="syn-op">+</span> <span class="syn-fn">find_hull</span>(<span class="syn-var">up</span>, <span class="syn-var">A</span>, <span class="syn-var">B</span>) <span class="syn-op">+</span> [<span class="syn-var">B</span>] <span class="syn-op">+</span> <span class="syn-fn">find_hull</span>(<span class="syn-var">down</span>, <span class="syn-var">B</span>, <span class="syn-var">A</span>)` },
+      { ln: 20, html: `` },
+      { ln: 21, html: `<span class="syn-com"># Test sur l'exemple du cours</span>` },
+      { ln: 22, html: `<span class="syn-var">points</span> <span class="syn-op">=</span> [(<span class="syn-num">0</span>,<span class="syn-num">3</span>),(<span class="syn-num">2</span>,<span class="syn-num">2</span>),(<span class="syn-num">1</span>,<span class="syn-num">1</span>),(<span class="syn-num">2</span>,<span class="syn-num">1</span>),(<span class="syn-num">3</span>,<span class="syn-num">0</span>),(<span class="syn-num">0</span>,<span class="syn-num">0</span>),(<span class="syn-num">3</span>,<span class="syn-num">3</span>)]`, isPointsLine: true },
+      { ln: 23, html: `<span class="syn-fn">print</span>(<span class="syn-fn">quickhull</span>(<span class="syn-var">points</span>))` },
+    ];
+
+    // =========================================================================
+    // 2. PRESET DATASETS & PYTHON HELPERS
+    // =========================================================================
+    const PRESETS = {
+      course: [
+        [0, 3], [2, 2], [1, 1], [2, 1], [3, 0], [0, 0], [3, 3]
+      ],
+      worst: [
+        // 8 points on a strictly convex arc: A=(0,0), B=(10,15), up=[], down has all 6 points,
+        // and 0 interior points are ever eliminated (O(n^2) worst-case behavior).
+        [0, 0], [2, 0], [4, 1], [6, 3], [8, 6], [9, 9], [10, 13], [10, 15]
+      ]
+    };
+
+    function generateRandomPoints(count = 10) {
+      const seen = new Set();
+      const pts = [];
+      let guard = 0;
+      while (pts.length < count && guard < 200) {
+        guard++;
+        const x = Math.floor(Math.random() * 11);
+        const y = Math.floor(Math.random() * 11);
+        const key = `${x},${y}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          pts.push([x, y]);
+        }
+      }
+      return pts;
+    }
+
+    // Exact Python cross(o, a, b)
+    function cross(o, a, b) {
+      return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    }
+
+    // Exact Python tuple comparison for min(points) and max(points): compare x first, then y
+    function pyCompareTuple(a, b) {
+      if (a[0] !== b[0]) return a[0] - b[0];
+      return a[1] - b[1];
+    }
+
+    function pyMin(pts) {
+      return pts.reduce((best, cur) => (pyCompareTuple(cur, best) < 0 ? cur : best), pts[0]);
+    }
+
+    function pyMax(pts) {
+      return pts.reduce((best, cur) => (pyCompareTuple(cur, best) > 0 ? cur : best), pts[0]);
+    }
+
+    function ptKey(p) {
+      return `${p[0]},${p[1]}`;
+    }
+
+    function fmtPt(p) {
+      return p ? `(${p[0]},${p[1]})` : 'None';
+    }
+
+    function fmtList(arr) {
+      if (!arr) return '—';
+      return `[${arr.map(fmtPt).join(', ')}]`;
+    }
+
+    function formatPointsLineHtml(pts) {
+      const inner = pts
+        .map(p => `(<span class="syn-num">${p[0]}</span>,<span class="syn-num">${p[1]}</span>)`)
+        .join(',');
+      return `<span class="syn-var">points</span> <span class="syn-op">=</span> [${inner}]`;
+    }
+
+    // =========================================================================
+    // 3. EXACT STEP-BY-STEP PYTHON EXECUTION TRACE GENERATOR
+    // =========================================================================
+    function generateTrace(points) {
+      const steps = [];
+      const confirmedEdges = [];     // Array of [p, q] confirmed on convex hull
+      const confirmedVerts = new Set();
+      const discardedSet = new Set();
+      const callStack = [];          // Deep-copied per step
+
+      let varA = null;
+      let varB = null;
+      let varUp = null;
+      let varDown = null;
+      let finalHull = null;
+
+      function snapshot(opts) {
+        steps.push({
+          line: opts.line,
+          phase: opts.phase || 'EXEC',
+          title: opts.title,
+          desc: opts.desc,
+          math: opts.math || [],
+          // Visual overlays
+          A: varA,
+          B: varB,
+          up: varUp ? [...varUp] : null,
+          down: varDown ? [...varDown] : null,
+          activeSegment: opts.activeSegment || null,   // [p, q]
+          activeS: opts.activeS ? [...opts.activeS] : [],
+          farthestC: opts.farthestC || null,
+          triangle: opts.triangle || null,             // [p, q, c]
+          showPerp: !!opts.showPerp,
+          S1: opts.S1 ? [...opts.S1] : null,
+          S2: opts.S2 ? [...opts.S2] : null,
+          subEdges: opts.subEdges || null,             // [[p,c], [c,q]]
+          confirmedEdges: confirmedEdges.map(e => [e[0], e[1]]),
+          confirmedVerts: new Set(confirmedVerts),
+          discardedSet: new Set(discardedSet),
+          stack: callStack.map(f => ({
+            id: f.id,
+            label: f.label,
+            S: [...f.S],
+            p: f.p,
+            q: f.q,
+            c: f.c,
+            S1: f.S1 ? [...f.S1] : null,
+            S2: f.S2 ? [...f.S2] : null,
+            returned: f.returned ? [...f.returned] : null,
+          })),
+          finalHull: finalHull ? [...finalHull] : null,
+        });
+      }
+
+      // Step 0: Initial points loaded
+      snapshot({
+        line: 22,
+        phase: 'LOAD',
+        title: 'Load Input Points',
+        desc: `Initialized points = ${fmtList(points)} (${points.length} points). Next, we invoke quickhull(points).`,
+      });
+
+      // Step 1: Enter quickhull(points)
+      snapshot({
+        line: 1,
+        phase: 'CALL',
+        title: 'Call quickhull(points)',
+        desc: `Entering quickhull() with ${points.length} points. Checking if len(points) < 3.`,
+      });
+
+      // Step 2: Check len(points) < 3
+      if (points.length < 3) {
+        finalHull = [...points];
+        snapshot({
+          line: 3,
+          phase: 'DONE',
+          title: 'Base Case (< 3 points)',
+          desc: `Fewer than 3 points, returning points directly: ${fmtList(finalHull)}.`,
+        });
+        return steps;
+      }
+
+      snapshot({
+        line: 2,
+        phase: 'CHECK',
+        title: 'Check Length Guard',
+        desc: `len(points) is ${points.length} (not < 3), so we proceed to find the extreme points A and B.`,
+      });
+
+      // Step 3: A, B = min(points), max(points)
+      varA = pyMin(points);
+      varB = pyMax(points);
+      confirmedVerts.add(ptKey(varA));
+      confirmedVerts.add(ptKey(varB));
+
+      snapshot({
+        line: 16,
+        phase: 'EXTREMES',
+        title: 'Find Extreme Points A & B',
+        desc: `Python's min() and max() on 2-tuples compare x first, then y. A = min(points) = ${fmtPt(varA)} and B = max(points) = ${fmtPt(varB)}. Both are guaranteed convex hull vertices!`,
+        activeSegment: [varA, varB],
+        math: [
+          `A = min(points) = ${fmtPt(varA)}`,
+          `B = max(points) = ${fmtPt(varB)}`,
+        ],
+      });
+
+      // Step 4: Partition up = [r for r in points if cross(A, B, r) > 0]
+      varUp = [];
+      const upMath = [];
+      const collinearAB = [];
+      for (const r of points) {
+        const val = cross(varA, varB, r);
+        if (val > 0) varUp.push(r);
+        if (val === 0 && ptKey(r) !== ptKey(varA) && ptKey(r) !== ptKey(varB)) {
+          collinearAB.push(r);
+          discardedSet.add(ptKey(r));
+        }
+        upMath.push(`cross(A,B,${fmtPt(r)}) = ${val}${val > 0 ? ' ✓ up' : val === 0 ? ' (collinear)' : ''}`);
+      }
+
+      snapshot({
+        line: 17,
+        phase: 'PARTITION UP',
+        title: 'Partition Upper Set (up)',
+        desc: `Evaluating cross(A, B, r) > 0 finds all points strictly to the LEFT of directed vector A → B. Found up = ${fmtList(varUp)}.${collinearAB.length ? ` Collinear point(s) ${fmtList(collinearAB)} have cross == 0 and are excluded!` : ''}`,
+        activeSegment: [varA, varB],
+        S1: varUp,
+        math: upMath,
+      });
+
+      // Step 5: Partition down = [r for r in points if cross(B, A, r) > 0]
+      varDown = [];
+      const downMath = [];
+      for (const r of points) {
+        const val = cross(varB, varA, r);
+        if (val > 0) varDown.push(r);
+        downMath.push(`cross(B,A,${fmtPt(r)}) = ${val}${val > 0 ? ' ✓ down' : ''}`);
+      }
+
+      snapshot({
+        line: 18,
+        phase: 'PARTITION DOWN',
+        title: 'Partition Lower Set (down)',
+        desc: `Evaluating cross(B, A, r) > 0 finds all points strictly to the LEFT of B → A (i.e., below A → B). Found down = ${fmtList(varDown)}.`,
+        activeSegment: [varB, varA],
+        S1: varUp,
+        S2: varDown,
+        math: downMath,
+      });
+
+      // Recursive helper matching find_hull(S, p, q)
+      let frameCounter = 0;
+      function traceFindHull(S, p, q, branchName) {
+        const frame = {
+          id: ++frameCounter,
+          label: `find_hull(${branchName})`,
+          S: [...S],
+          p,
+          q,
+          c: null,
+          S1: null,
+          S2: null,
+          returned: null,
+        };
+        callStack.push(frame);
+
+        // Enter find_hull
+        snapshot({
+          line: 8,
+          phase: 'RECURSE',
+          title: `Enter find_hull(S, ${fmtPt(p)}, ${fmtPt(q)})`,
+          desc: `Pushed frame onto call stack for directed edge ${fmtPt(p)} → ${fmtPt(q)} with ${S.length} candidate point(s): S = ${fmtList(S)}.`,
+          activeSegment: [p, q],
+          activeS: S,
+        });
+
+        // Base case: if not S: return []
+        if (S.length === 0) {
+          snapshot({
+            line: 9,
+            phase: 'BASE CASE',
+            title: 'Check if not S',
+            desc: `S is empty ([]), so no points lie outside edge ${fmtPt(p)} → ${fmtPt(q)}.`,
+            activeSegment: [p, q],
+          });
+
+          confirmedEdges.push([p, q]);
+          frame.returned = [];
+
+          snapshot({
+            line: 10,
+            phase: 'CONFIRM EDGE',
+            title: `Return [] & Confirm Edge ${fmtPt(p)} → ${fmtPt(q)}`,
+            desc: `Base case returns []. Since no points remain to the left of ${fmtPt(p)} → ${fmtPt(q)}, this segment is confirmed as a final convex hull edge!`,
+            activeSegment: [p, q],
+          });
+
+          callStack.pop();
+          return [];
+        }
+
+        // Find farthest point c = max(S, key=lambda r: cross(p, q, r))
+        let c = S[0];
+        let bestCross = cross(p, q, S[0]);
+        const cMath = [];
+        for (const r of S) {
+          const val = cross(p, q, r);
+          if (val > bestCross) {
+            bestCross = val;
+            c = r;
+          }
+          cMath.push(`cross(${fmtPt(p)},${fmtPt(q)},${fmtPt(r)}) = ${val}`);
+        }
+        frame.c = c;
+        confirmedVerts.add(ptKey(c));
+
+        snapshot({
+          line: 11,
+          phase: 'FARTHEST',
+          title: `Find Farthest Point c = ${fmtPt(c)}`,
+          desc: `Maximizing cross(${fmtPt(p)}, ${fmtPt(q)}, r) over S selects c = ${fmtPt(c)} (cross = ${bestCross}). Since triangle (${fmtPt(p)}, ${fmtPt(q)}, ${fmtPt(c)}) lies inside the hull, any points strictly inside it will be eliminated!`,
+          activeSegment: [p, q],
+          activeS: S,
+          farthestC: c,
+          triangle: [p, q, c],
+          showPerp: true,
+          math: cMath.map(m => m.includes(fmtPt(c)) ? `${m} ★ max` : m),
+        });
+
+        // Partition S1 = [r for r in S if cross(p, c, r) > 0]
+        const S1 = [];
+        const s1Math = [];
+        for (const r of S) {
+          const val = cross(p, c, r);
+          if (val > 0) S1.push(r);
+          s1Math.push(`cross(${fmtPt(p)},${fmtPt(c)},${fmtPt(r)}) = ${val}${val > 0 ? ' ✓ S1' : ''}`);
+        }
+        frame.S1 = S1;
+
+        snapshot({
+          line: 12,
+          phase: 'SPLIT S1',
+          title: `Compute S1 (Left of ${fmtPt(p)} → ${fmtPt(c)})`,
+          desc: `Filtering S for points strictly to the left of ${fmtPt(p)} → ${fmtPt(c)} yields S1 = ${fmtList(S1)}.`,
+          activeSegment: [p, q],
+          activeS: S,
+          farthestC: c,
+          triangle: [p, q, c],
+          S1: S1,
+          subEdges: [[p, c]],
+          math: s1Math,
+        });
+
+        // Partition S2 = [r for r in S if cross(c, q, r) > 0]
+        const S2 = [];
+        const s2Math = [];
+        for (const r of S) {
+          const val = cross(c, q, r);
+          if (val > 0) S2.push(r);
+          s2Math.push(`cross(${fmtPt(c)},${fmtPt(q)},${fmtPt(r)}) = ${val}${val > 0 ? ' ✓ S2' : ''}`);
+        }
+        frame.S2 = S2;
+
+        // Any point in S that is not c, not in S1, and not in S2 is eliminated inside triangle (p, q, c)
+        const s1Keys = new Set(S1.map(ptKey));
+        const s2Keys = new Set(S2.map(ptKey));
+        const newlyEliminated = [];
+        for (const r of S) {
+          const k = ptKey(r);
+          if (k !== ptKey(c) && !s1Keys.has(k) && !s2Keys.has(k)) {
+            discardedSet.add(k);
+            newlyEliminated.push(r);
+          }
+        }
+
+        snapshot({
+          line: 13,
+          phase: 'SPLIT S2',
+          title: `Compute S2 (Left of ${fmtPt(c)} → ${fmtPt(q)})`,
+          desc: `Filtering S for points strictly to the left of ${fmtPt(c)} → ${fmtPt(q)} yields S2 = ${fmtList(S2)}.${newlyEliminated.length ? ` Interior point(s) ${fmtList(newlyEliminated)} inside triangle (${fmtPt(p)}, ${fmtPt(q)}, ${fmtPt(c)}) are permanently discarded!` : ' No interior points were eliminated in this split.'}`,
+          activeSegment: [p, q],
+          activeS: S,
+          farthestC: c,
+          triangle: [p, q, c],
+          S1: S1,
+          S2: S2,
+          subEdges: [[p, c], [c, q]],
+          math: s2Math,
+        });
+
+        // Recurse on S1 and S2
+        snapshot({
+          line: 14,
+          phase: 'DIVIDE',
+          title: `Recurse on S1 and S2 around c = ${fmtPt(c)}`,
+          desc: `Now executing find_hull(S1, ${fmtPt(p)}, ${fmtPt(c)}) + [${fmtPt(c)}] + find_hull(S2, ${fmtPt(c)}, ${fmtPt(q)}). First, recursing into S1.`,
+          activeSegment: [p, q],
+          farthestC: c,
+          triangle: [p, q, c],
+          S1: S1,
+          S2: S2,
+          subEdges: [[p, c], [c, q]],
+        });
+
+        const leftRes = traceFindHull(S1, p, c, 'S1');
+        const rightRes = traceFindHull(S2, c, q, 'S2');
+        const combined = [...leftRes, c, ...rightRes];
+        frame.returned = combined;
+
+        snapshot({
+          line: 14,
+          phase: 'COMBINE',
+          title: `Combine Results for (${fmtPt(p)} → ${fmtPt(q)})`,
+          desc: `Combined ${fmtList(leftRes)} + [${fmtPt(c)}] + ${fmtList(rightRes)} = ${fmtList(combined)}. Returning up the call stack.`,
+          activeSegment: [p, q],
+          farthestC: c,
+        });
+
+        callStack.pop();
+        return combined;
+      }
+
+      // Step 6: Line 19 kickoff
+      snapshot({
+        line: 19,
+        phase: 'DIVIDE',
+        title: 'Solve Upper & Lower Hulls',
+        desc: `Starting return [A] + find_hull(up, A, B) + [B] + find_hull(down, B, A). First, calling find_hull(up, ${fmtPt(varA)}, ${fmtPt(varB)}).`,
+        activeSegment: [varA, varB],
+        S1: varUp,
+        S2: varDown,
+      });
+
+      const upperHull = traceFindHull(varUp, varA, varB, 'up');
+
+      snapshot({
+        line: 19,
+        phase: 'DIVIDE',
+        title: 'Upper Hull Done — Solve Lower Hull',
+        desc: `find_hull(up, A, B) returned ${fmtList(upperHull)}. Next, calling find_hull(down, ${fmtPt(varB)}, ${fmtPt(varA)}).`,
+        activeSegment: [varB, varA],
+        S2: varDown,
+      });
+
+      const lowerHull = traceFindHull(varDown, varB, varA, 'down');
+
+      // Final assembly
+      finalHull = [varA, ...upperHull, varB, ...lowerHull];
+
+      snapshot({
+        line: 19,
+        phase: 'ASSEMBLE',
+        title: 'Assemble Complete Convex Hull',
+        desc: `Returning [${fmtPt(varA)}] + ${fmtList(upperHull)} + [${fmtPt(varB)}] + ${fmtList(lowerHull)} = ${fmtList(finalHull)}.`,
+        math: [`Total Hull Vertices: ${finalHull.length} / ${points.length}`],
+      });
+
+      // Print output
+      snapshot({
+        line: 23,
+        phase: 'COMPLETE',
+        title: 'Print Final Convex Hull',
+        desc: `quickhull(points) finished! Printed ${fmtList(finalHull)} (ordered clockwise around the hull perimeter).`,
+        math: [`Output: ${fmtList(finalHull)}`],
+      });
+
+      return steps;
+    }
+
+    // =========================================================================
+    // 4. APPLICATION STATE & DOM REFERENCES
+    // =========================================================================
+    let currentPreset = 'course';
+    let currentPoints = [...PRESETS.course];
+    let traceSteps = [];
+    let currentStepIdx = 0;
+    let isPlaying = false;
+    let playTimer = null;
+    let speedMultiplier = 1.0;
+
+    const canvas = document.getElementById('hull-canvas');
+    const ctx = canvas.getContext('2d');
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+
+    const elCodeContainer = document.getElementById('code-container');
+    const elStepCounter = document.getElementById('step-counter');
+    const elStepSlider = document.getElementById('step-slider');
+    const elStepPercent = document.getElementById('step-percent');
+    const elPhaseBadge = document.getElementById('phase-badge');
+    const elStepTitle = document.getElementById('step-title');
+    const elStepLineBadge = document.getElementById('step-line-badge');
+    const elStepDesc = document.getElementById('step-desc');
+    const elStepMath = document.getElementById('step-math');
+
+    const btnPlay = document.getElementById('btn-play');
+    const iconPlay = document.getElementById('icon-play');
+    const iconPause = document.getElementById('icon-pause');
+    const labelPlay = document.getElementById('label-play');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const btnReset = document.getElementById('btn-reset');
+    const speedSlider = document.getElementById('speed-slider');
+    const speedLabel = document.getElementById('speed-label');
+
+    // =========================================================================
+    // 5. RENDER SYNTAX-HIGHLIGHTED CODE PANEL
+    // =========================================================================
+    function renderCodeBlock(points) {
+      elCodeContainer.innerHTML = CODE_LINES.map(item => {
+        const content = item.isPointsLine ? formatPointsLineHtml(points) : (item.html || '&nbsp;');
+        return `
+          <div id="code-ln-${item.ln}" class="code-line flex items-start px-3 py-0.5 whitespace-pre">
+            <span class="w-7 shrink-0 text-right pr-3 text-slate-600 select-none text-[11px] leading-6">${item.ln}</span>
+            <span class="flex-1">${content}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function highlightCodeLine(lineNum) {
+      document.querySelectorAll('.code-line.active-line').forEach(el => el.classList.remove('active-line'));
+      const target = document.getElementById(`code-ln-${lineNum}`);
+      if (target) {
+        target.classList.add('active-line');
+      }
+    }
+
+    // =========================================================================
+    // 6. 2D CARTESIAN CANVAS RENDERER (RESPONSIVE + RETINA CRISP)
+    // =========================================================================
+    function resizeCanvas() {
+      const rect = canvasWrapper.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawCanvas();
+    }
+
+    function drawArrowhead(ctx, fromX, fromY, toX, toY, size, color) {
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - size * Math.cos(angle - Math.PI / 6), toY - size * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(toX - size * Math.cos(angle + Math.PI / 6), toY - size * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawDirectedSegment(ctx, x1, y1, x2, y2, color, dashed = true, width = 2.2) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.setLineDash(dashed ? [7, 5] : []);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Place arrowhead slightly inset from endpoint so it doesn't hide behind point circle
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      if (len > 22) {
+        const inset = 11;
+        const ax = x2 - (dx / len) * inset;
+        const ay = y2 - (dy / len) * inset;
+        drawArrowhead(ctx, x1, y1, ax, ay, 9, color);
+      }
+      ctx.restore();
+    }
+
+    function drawCanvas() {
+      if (!traceSteps.length) return;
+      const step = traceSteps[currentStepIdx];
+      const W = canvasWrapper.clientWidth;
+      const H = canvasWrapper.clientHeight;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Compute mathematical bounds with clean padding
+      const xs = currentPoints.map(p => p[0]);
+      const ys = currentPoints.map(p => p[1]);
+      const minX = Math.min(0, ...xs);
+      const maxX = Math.max(3, ...xs);
+      const minY = Math.min(0, ...ys);
+      const maxY = Math.max(3, ...ys);
+
+      const padLeft = 48;
+      const padRight = 36;
+      const padTop = 36;
+      const padBottom = 42;
+
+      const plotW = Math.max(10, W - padLeft - padRight);
+      const plotH = Math.max(10, H - padTop - padBottom);
+
+      // Add a small margin in math units so points aren't glued to axes
+      const spanX = Math.max(1, maxX - minX);
+      const spanY = Math.max(1, maxY - minY);
+      const marginX = Math.max(0.5, spanX * 0.12);
+      const marginY = Math.max(0.5, spanY * 0.14);
+
+      const viewMinX = minX - marginX;
+      const viewMaxX = maxX + marginX;
+      const viewMinY = minY - marginY;
+      const viewMaxY = maxY + marginY;
+
+      // Standard Cartesian transform: Y increases UP
+      const toX = x => padLeft + ((x - viewMinX) / (viewMaxX - viewMinX)) * plotW;
+      const toY = y => H - padBottom - ((y - viewMinY) / (viewMaxY - viewMinY)) * plotH;
+
+      // 1. Draw Grid Lines & Axis Ticks
+      const xStep = spanX > 10 ? 2 : 1;
+      const yStep = spanY > 10 ? 2 : 1;
+
+      ctx.save();
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+
+      for (let gx = Math.floor(minX); gx <= Math.ceil(maxX); gx += xStep) {
+        const px = toX(gx);
+        ctx.strokeStyle = gx === 0 ? 'rgba(148, 163, 184, 0.38)' : 'rgba(51, 65, 85, 0.35)';
+        ctx.lineWidth = gx === 0 ? 1.5 : 1;
+        ctx.beginPath();
+        ctx.moveTo(px, padTop - 8);
+        ctx.lineTo(px, H - padBottom);
+        ctx.stroke();
+
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(String(gx), px, H - padBottom + 8);
+      }
+
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (let gy = Math.floor(minY); gy <= Math.ceil(maxY); gy += yStep) {
+        const py = toY(gy);
+        ctx.strokeStyle = gy === 0 ? 'rgba(148, 163, 184, 0.38)' : 'rgba(51, 65, 85, 0.35)';
+        ctx.lineWidth = gy === 0 ? 1.5 : 1;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, py);
+        ctx.lineTo(W - padRight + 8, py);
+        ctx.stroke();
+
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(String(gy), padLeft - 10, py);
+      }
+
+      // Axis labels
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('X', W - 12, H - padBottom + 4);
+      ctx.textAlign = 'left';
+      ctx.fillText('Y', padLeft - 24, padTop - 16);
+      ctx.restore();
+
+      // 2. Final Completed Convex Hull Fill
+      if (step.finalHull && step.finalHull.length >= 3) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.14)';
+        ctx.beginPath();
+        step.finalHull.forEach((p, idx) => {
+          const px = toX(p[0]);
+          const py = toY(p[1]);
+          if (idx === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 3. Shaded Triangle (p, q, c) for eliminated interior area
+      if (step.triangle) {
+        const [tp, tq, tc] = step.triangle;
+        ctx.save();
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.13)';
+        ctx.strokeStyle = 'rgba(250, 204, 21, 0.45)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(toX(tp[0]), toY(tp[1]));
+        ctx.lineTo(toX(tq[0]), toY(tq[1]));
+        ctx.lineTo(toX(tc[0]), toY(tc[1]));
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw perpendicular distance indicator from c to line p-q when finding farthest point
+        if (step.showPerp) {
+          const x1 = toX(tp[0]), y1 = toY(tp[1]);
+          const x2 = toX(tq[0]), y2 = toY(tq[1]);
+          const xc = toX(tc[0]), yc = toY(tc[1]);
+          const dx = x2 - x1, dy = y2 - y1;
+          const lenSq = dx * dx + dy * dy;
+          if (lenSq > 0.001) {
+            const t = ((xc - x1) * dx + (yc - y1) * dy) / lenSq;
+            const projX = x1 + t * dx;
+            const projY = y1 + t * dy;
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(xc, yc);
+            ctx.lineTo(projX, projY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Small right-angle dot at projection
+            ctx.fillStyle = '#facc15';
+            ctx.beginPath();
+            ctx.arc(projX, projY, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.restore();
+      }
+
+      // 4. Confirmed Convex Hull Edges (glowing emerald)
+      if (step.confirmedEdges.length) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(16, 185, 129, 0.55)';
+        ctx.shadowBlur = 10;
+        for (const [ep, eq] of step.confirmedEdges) {
+          drawDirectedSegment(ctx, toX(ep[0]), toY(ep[1]), toX(eq[0]), toY(eq[1]), '#10b981', false, 3);
+        }
+        ctx.restore();
+      }
+
+      // 5. Active Directed Segment p -> q (or A -> B)
+      if (step.activeSegment && !step.finalHull) {
+        const [sp, sq] = step.activeSegment;
+        drawDirectedSegment(ctx, toX(sp[0]), toY(sp[1]), toX(sq[0]), toY(sq[1]), '#22d3ee', true, 2.2);
+      }
+
+      // 6. Sub-edges p -> c (sky/amber) and c -> q (fuchsia) during S1/S2 partitioning
+      if (step.subEdges) {
+        if (step.subEdges[0]) {
+          const [p1, p2] = step.subEdges[0];
+          drawDirectedSegment(ctx, toX(p1[0]), toY(p1[1]), toX(p2[0]), toY(p2[1]), '#38bdf8', true, 2.2);
+        }
+        if (step.subEdges[1]) {
+          const [p1, p2] = step.subEdges[1];
+          drawDirectedSegment(ctx, toX(p1[0]), toY(p1[1]), toX(p2[0]), toY(p2[1]), '#e879f9', true, 2.2);
+        }
+      }
+
+      // 7. Draw All Points with Priority-Based Styling
+      const s1Set = new Set((step.S1 || []).map(ptKey));
+      const s2Set = new Set((step.S2 || []).map(ptKey));
+      const activeSSet = new Set((step.activeS || []).map(ptKey));
+      const segKeys = step.activeSegment ? new Set(step.activeSegment.map(ptKey)) : new Set();
+      const cKey = step.farthestC ? ptKey(step.farthestC) : null;
+      const aKey = step.A ? ptKey(step.A) : null;
+      const bKey = step.B ? ptKey(step.B) : null;
+
+      for (const pt of currentPoints) {
+        const k = ptKey(pt);
+        const px = toX(pt[0]);
+        const py = toY(pt[1]);
+
+        let fill = '#94a3b8';
+        let stroke = '#e2e8f0';
+        let radius = 6;
+        let glow = null;
+        let roleTag = '';
+
+        if (step.discardedSet.has(k)) {
+          fill = '#1e293b';
+          stroke = '#64748b';
+          radius = 5;
+        }
+        if (activeSSet.has(k)) {
+          fill = '#e2e8f0';
+          stroke = '#ffffff';
+          radius = 6.5;
+        }
+        if (s1Set.has(k)) {
+          fill = '#38bdf8';
+          stroke = '#bae6fd';
+          radius = 7;
+          glow = 'rgba(56, 189, 248, 0.6)';
+        }
+        if (s2Set.has(k)) {
+          fill = '#e879f9';
+          stroke = '#f5d0fe';
+          radius = 7;
+          glow = 'rgba(232, 121, 249, 0.6)';
+        }
+        if (step.confirmedVerts.has(k)) {
+          fill = '#10b981';
+          stroke = '#a7f3d0';
+          radius = 7;
+          glow = 'rgba(16, 185, 129, 0.55)';
+        }
+        if (segKeys.has(k) && !step.finalHull) {
+          fill = '#22d3ee';
+          stroke = '#cffafe';
+          radius = 7.5;
+          glow = 'rgba(34, 211, 238, 0.7)';
+        }
+        if (k === cKey) {
+          fill = '#facc15';
+          stroke = '#fef08a';
+          radius = 8.5;
+          glow = 'rgba(250, 204, 21, 0.85)';
+        }
+
+        // Determine short role tag (A, B, p, q, c)
+        const tags = [];
+        if (k === aKey && step.line >= 16) tags.push('A');
+        if (k === bKey && step.line >= 16) tags.push('B');
+        if (step.activeSegment && !step.finalHull) {
+          if (k === ptKey(step.activeSegment[0]) && k !== aKey && k !== bKey) tags.push('p');
+          if (k === ptKey(step.activeSegment[1]) && k !== aKey && k !== bKey) tags.push('q');
+        }
+        if (k === cKey) tags.push('c');
+        roleTag = tags.join('/');
+
+        // Draw point circle
+        ctx.save();
+        if (glow) {
+          ctx.shadowColor = glow;
+          ctx.shadowBlur = 12;
+        }
+        ctx.beginPath();
+        ctx.arc(px, py, radius, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = stroke;
+        ctx.stroke();
+
+        // Subtle X inside discarded points
+        if (step.discardedSet.has(k) && !step.confirmedVerts.has(k)) {
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = '#64748b';
+          ctx.lineWidth = 1.3;
+          ctx.beginPath();
+          ctx.moveTo(px - 2.5, py - 2.5);
+          ctx.lineTo(px + 2.5, py + 2.5);
+          ctx.moveTo(px + 2.5, py - 2.5);
+          ctx.lineTo(px - 2.5, py + 2.5);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // Draw coordinate label (x, y) positioned cleanly so it never clips
+        ctx.save();
+        ctx.font = '600 11px "JetBrains Mono", monospace';
+        const coordText = roleTag ? `${roleTag} (${pt[0]},${pt[1]})` : `(${pt[0]},${pt[1]})`;
+        const textW = ctx.measureText(coordText).width;
+        let lx = px + 10;
+        let ly = py - 10;
+        if (lx + textW > W - 8) lx = px - textW - 10;
+        if (ly < 18) ly = py + 18;
+
+        // Pill background for readability over grid/lines
+        ctx.fillStyle = 'rgba(9, 11, 16, 0.82)';
+        ctx.beginPath();
+        ctx.roundRect(lx - 4, ly - 10, textW + 8, 16, 4);
+        ctx.fill();
+
+        ctx.fillStyle = k === cKey ? '#fde047' : roleTag ? '#67e8f9' : step.discardedSet.has(k) ? '#64748b' : '#e2e8f0';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(coordText, lx, ly - 2);
+        ctx.restore();
+      }
+    }
+
+    // =========================================================================
+    // 7. UPDATE INSPECTOR, EXPLANATION BANNER, AND PLAYBACK UI
+    // =========================================================================
+    function updateUI() {
+      const step = traceSteps[currentStepIdx];
+      if (!step) return;
+
+      const total = traceSteps.length;
+      elStepCounter.textContent = `Step ${currentStepIdx + 1} / ${total}`;
+      elStepSlider.max = total - 1;
+      elStepSlider.value = currentStepIdx;
+      const pct = total > 1 ? Math.round((currentStepIdx / (total - 1)) * 100) : 100;
+      elStepPercent.textContent = `${pct}%`;
+
+      elPhaseBadge.textContent = step.phase;
+      elStepTitle.textContent = step.title;
+      elStepLineBadge.textContent = `Line ${step.line}`;
+      elStepDesc.textContent = step.desc;
+
+      // Exact math chips
+      if (step.math && step.math.length) {
+        elStepMath.classList.remove('hidden');
+        elStepMath.classList.add('flex');
+        elStepMath.innerHTML = step.math.map(m => {
+          const isPositive = m.includes('✓') || m.includes('★');
+          const cls = isPositive
+            ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-200'
+            : 'bg-slate-800/90 border-slate-700 text-slate-300';
+          return `<span class="px-2 py-0.5 rounded-md border font-mono text-[11px] ${cls}">${m}</span>`;
+        }).join('');
+      } else {
+        elStepMath.classList.add('hidden');
+        elStepMath.classList.remove('flex');
+        elStepMath.innerHTML = '';
+      }
+
+      // Highlight active line in Python code
+      highlightCodeLine(step.line);
+
+      // Button disabled states
+      btnPrev.disabled = currentStepIdx === 0;
+      btnPrev.classList.toggle('opacity-40', currentStepIdx === 0);
+      btnNext.disabled = currentStepIdx === total - 1;
+      btnNext.classList.toggle('opacity-40', currentStepIdx === total - 1);
+
+      drawCanvas();
+    }
+
+    // =========================================================================
+    // 8. PLAYBACK ENGINE & EVENT HANDLERS
+    // =========================================================================
+    function stopPlayback() {
+      isPlaying = false;
+      if (playTimer) {
+        clearInterval(playTimer);
+        playTimer = null;
+      }
+      iconPlay.classList.remove('hidden');
+      iconPause.classList.add('hidden');
+      labelPlay.textContent = 'Play';
+    }
+
+    function startPlayback() {
+      if (currentStepIdx >= traceSteps.length - 1) {
+        currentStepIdx = 0;
+        updateUI();
+      }
+      isPlaying = true;
+      iconPlay.classList.add('hidden');
+      iconPause.classList.remove('hidden');
+      labelPlay.textContent = 'Pause';
+
+      const intervalMs = Math.max(250, Math.round(1250 / speedMultiplier));
+      playTimer = setInterval(() => {
+        if (currentStepIdx < traceSteps.length - 1) {
+          currentStepIdx++;
+          updateUI();
+        } else {
+          stopPlayback();
+        }
+      }, intervalMs);
+    }
+
+    function togglePlayback() {
+      if (isPlaying) stopPlayback();
+      else startPlayback();
+    }
+
+    function loadPreset(presetKey) {
+      stopPlayback();
+      currentPreset = presetKey;
+
+      if (presetKey === 'course') {
+        currentPoints = PRESETS.course.map(p => [...p]);
+      } else if (presetKey === 'worst') {
+        currentPoints = PRESETS.worst.map(p => [...p]);
+      } else {
+        currentPoints = generateRandomPoints(10);
+      }
+
+      // Update active preset pill styles
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        const active = btn.dataset.preset === presetKey;
+        if (active) {
+          btn.className = 'preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border border-cyan-400/60 bg-cyan-400/15 text-cyan-300 shadow-sm shadow-cyan-500/10';
+        } else {
+          btn.className = 'preset-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border border-ide-border bg-ide-card text-slate-300 hover:border-slate-500 hover:text-white';
+        }
+      });
+
+      renderCodeBlock(currentPoints);
+      traceSteps = generateTrace(currentPoints);
+      currentStepIdx = 0;
+      updateUI();
+    }
+
+    // Wire up controls
+    btnPlay.addEventListener('click', togglePlayback);
+
+    btnPrev.addEventListener('click', () => {
+      stopPlayback();
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        updateUI();
+      }
+    });
+
+    btnNext.addEventListener('click', () => {
+      stopPlayback();
+      if (currentStepIdx < traceSteps.length - 1) {
+        currentStepIdx++;
+        updateUI();
+      }
+    });
+
+    btnReset.addEventListener('click', () => {
+      stopPlayback();
+      currentStepIdx = 0;
+      updateUI();
+    });
+
+    elStepSlider.addEventListener('input', e => {
+      stopPlayback();
+      currentStepIdx = Number(e.target.value);
+      updateUI();
+    });
+
+    speedSlider.addEventListener('input', e => {
+      speedMultiplier = Number(e.target.value);
+      speedLabel.textContent = `${speedMultiplier.toFixed(2).replace(/\.00$/, '.0')}x`;
+      if (isPlaying) {
+        stopPlayback();
+        startPlayback();
+      }
+    });
+
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => loadPreset(btn.dataset.preset));
+    });
+
+    // Keyboard shortcuts (Space, Left/Right Arrows, R)
+    window.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlayback();
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        stopPlayback();
+        if (currentStepIdx < traceSteps.length - 1) {
+          currentStepIdx++;
+          updateUI();
+        }
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        stopPlayback();
+        if (currentStepIdx > 0) {
+          currentStepIdx--;
+          updateUI();
+        }
+      } else if (e.key === 'r' || e.key === 'R') {
+        stopPlayback();
+        currentStepIdx = 0;
+        updateUI();
+      }
+    });
+
+    // Responsive canvas resizing
+    const ro = new ResizeObserver(() => resizeCanvas());
+    ro.observe(canvasWrapper);
+
+    // Initialize on load
+    window.addEventListener('load', () => {
+      loadPreset('course');
+      resizeCanvas();
+    });
+  </script>
+</body>
+</html>

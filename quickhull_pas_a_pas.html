@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuickHull pas à pas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+:root{
+  /* Schéma : violet nuit, rose, cyan, jaune, les couleurs du cours QuickHull */
+  --bg:#07000F; --card:#150A24; --line:#3A2A55; --fg:#F3EEFF; --mute:#B9ACCF; --dim:#7D6FA0;
+  --pink:#FF2E88; --cyan:#00F0FF; --yel:#FFE600; --vio:#B79BFF; --grey:#9A9AB0;
+  --disp:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,"Courier New",monospace;
+  color-scheme:dark;
+}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--disp)}
+*{box-sizing:border-box}
+.wrap{max-width:1180px;margin:0 auto;padding-block:24px 32px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{margin-bottom:20px}
+.kicker{margin:0 0 6px;font:700 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+h1{margin:0 0 8px;font:700 clamp(28px,4.4vw,40px)/1.1 var(--disp);text-wrap:balance}
+.lede{margin:0;color:var(--mute);max-width:68ch}
+.main{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.card h3{margin:0 0 10px;font:700 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.stage{display:flex;flex-direction:column;gap:12px}
+.canvaswrap{display:flex;justify-content:center}
+#cv{display:block;max-width:100%;height:auto;border-radius:10px;background:#0B0416;border:1px solid var(--line)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tag{font:700 12px/1 var(--mono);color:var(--yel);letter-spacing:.06em;padding:6px 9px;border:1px solid rgba(255,230,0,.4);border-radius:999px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--mute)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:50%;display:inline-block}
+#ttl{margin:0 0 8px;font:700 22px/1.25 var(--disp);text-wrap:balance}
+#expl{margin:0;color:var(--mute)}
+.cap{border-color:rgba(255,230,0,.35)}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:700 14px/1 var(--disp);color:#0B0416;background:var(--cyan);border:1px solid var(--cyan);border-radius:10px;padding:11px 14px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn:focus-visible{outline:2px solid var(--yel);outline-offset:2px}
+.code{font:13px/1.5 var(--mono);color:var(--mute)}
+.ln{padding:5px 8px;border-radius:6px;transition:background .25s,color .25s}
+.ln.on{background:rgba(255,46,136,.2);color:var(--fg)}
+.gap{height:10px}
+.mono{font:13px/1.6 var(--mono)}
+.call{white-space:pre}
+.dim{color:var(--dim)}
+.side{display:flex;flex-direction:column;gap:18px;min-width:0}
+.found{color:var(--cyan);font-weight:700}
+.embed .top{display:none}
+.embed .wrap{padding-top:8px}
+.embed .main{gap:14px;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);align-items:stretch}
+.embed .stage{grid-column:2;grid-row:1;gap:8px}
+.embed .side{grid-column:1;grid-row:1}
+.embed .canvaswrap{order:2}
+.embed .row{order:3}
+.embed .ctrl{order:4}
+.embed .cap{order:1;border:0;background:none;padding:0}
+.embed #expl{font-size:13px;line-height:1.4}
+.embed .code{font-size:14px;line-height:1.55}
+.embed #ttl{font-size:18px;margin-bottom:4px}
+.embed .card{padding:12px}
+.embed .side{gap:12px}
+.embed .found-card{display:none}
+@media (max-width:860px){.embed .stage,.embed .side{grid-column:1}.embed .stage{grid-row:auto}}
+@media (prefers-reduced-motion:reduce){.ln{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="kicker">Enveloppe convexe · 2D</p>
+    <h1>QuickHull, pas à pas</h1>
+    <p class="lede">À chaque appel, on prend une droite [PQ] et on cherche le point le plus éloigné. Ce point devient un sommet, et les points qu'il enferme dans son triangle sont éliminés.</p>
+  </header>
+
+  <div class="main">
+    <section class="card stage" aria-label="Animation de l'algorithme">
+      <section class="card cap">
+        <h2 id="ttl"></h2>
+        <p id="expl"></p>
+      </section>
+      <div class="canvaswrap"><canvas id="cv" role="img" aria-label="Schéma de l'étape courante de QuickHull"></canvas></div>
+      <div class="row">
+        <span id="stepno" class="tag">Étape 0 / 0</span>
+        <div class="legend" aria-label="Légende">
+          <span><i class="sw" style="background:var(--yel)"></i>[PQ] et S1</span>
+          <span><i class="sw" style="background:var(--cyan)"></i>sommet / côté</span>
+          <span><i class="sw" style="background:var(--pink)"></i>C, point le plus loin</span>
+          <span><i class="sw" style="background:var(--vio)"></i>S2</span>
+          <span><i class="sw" style="background:var(--grey)"></i>Sk</span>
+        </div>
+      </div>
+      <div class="ctrl">
+        <button id="prev" class="btn ghost">◀ Précédent</button>
+        <button id="next" class="btn">Suivant ▶</button>
+        <button id="shuffle" class="btn ghost">Nouveau nuage</button>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="card">
+        <h3>Pseudo-code</h3>
+        <div class="code" id="code"></div>
+      </section>
+      <section class="card">
+        <h3>Pile d'appels</h3>
+        <div class="mono" id="stackEl"></div>
+      </section>
+      <section class="card found-card">
+        <h3>Sommets trouvés</h3>
+        <div class="mono found" id="foundEl"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script>
+const PSEUDO=[
+  [1,0,'fonction QuickHull(S) :'],
+  [2,1,'A ← point le plus à gauche ; B ← point le plus à droite'],
+  [3,1,'S1 ← points à gauche de A→B ; S2 ← points à gauche de B→A'],
+  [4,1,'FindHull(S1, A, B) ; FindHull(S2, B, A)'],
+  [0,0,''],
+  [6,0,'fonction FindHull(Sk, P, Q) :'],
+  [7,1,'si Sk est vide : retourner'],
+  [8,1,'C ← point de Sk le plus éloigné de [PQ]'],
+  [9,1,"ajouter C à l'enveloppe"],
+  [10,1,"S1 ← points à l'extérieur de [PC] ; S2 ← points à l'extérieur de [CQ]"],
+  [11,1,'FindHull(S1, P, C) ; FindHull(S2, C, Q)']
+];
+document.getElementById('code').innerHTML=PSEUDO.map(([l,ind,t])=>
+  t?`<div class="ln" data-l="${l}" style="padding-left:${8+ind*18}px">${t}</div>`:'<div class="gap"></div>').join('');
+
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const stackEl=document.getElementById('stackEl'),foundEl=document.getElementById('foundEl');
+const ttlEl=document.getElementById('ttl'),explEl=document.getElementById('expl');
+const EMBED=window.self!==window.top;
+if(EMBED)document.documentElement.classList.add('embed');
+let dpr=1,SZ=480,P=[],F=[],k=0;
+const cr=(a,b,p)=>(b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);
+
+function randomPts(n){
+  const pts=[];let g=0;
+  while(pts.length<n&&g<20000){
+    g++;
+    const p={x:0.07+Math.random()*0.86,y:0.07+Math.random()*0.86};
+    if(pts.every(q=>Math.hypot(q.x-p.x,q.y-p.y)>=0.15))pts.push(p);
+  }
+  return pts;
+}
+
+/* Déroulé de l'algorithme : une frame par étape visible.
+   Les noms ne sont donnés qu'aux rôles de l'étape : A et B pour les extrêmes,
+   puis P, Q (extrémités de la droite courante) et C (le point le plus loin). */
+function build(){
+  const N=P.length,all=[...Array(N).keys()];
+  const frames=[],edges=[],verts=[],stack=[];
+  let baseAB=null;
+  const snap=o=>frames.push(Object.assign(
+    {lines:[],seg:null,base:baseAB,names:[],sk:[],s1:[],s2:[],elim:[],c:null,tri:null,proj:false,done:false,
+     ttl:()=>'',expl:()=>''},
+    o,
+    {stack:stack.slice(),edges:edges.map(e=>e.slice()),verts:verts.slice()}));
+
+  snap({ttl:()=>'Ensemble de départ',
+        expl:()=>`${N} points au hasard. L'algorithme n'en connaît pas encore l'ordre : il va construire l'enveloppe étape par étape.`});
+
+  stack.push(()=>'QuickHull(S)');
+  let A=0,B=0;
+  all.forEach(i=>{if(P[i].x<P[A].x)A=i;if(P[i].x>P[B].x)B=i});
+  verts.push(A,B);
+  baseAB=[A,B];
+  snap({lines:[1,2],names:[[A,'A'],[B,'B']],
+        ttl:()=>'Étape 1 : les deux extrêmes',
+        expl:()=>`Le point le plus à gauche est A, le plus à droite est B. Le segment [AB] est forcément un côté de l'enveloppe.`});
+
+  const S1=all.filter(i=>cr(P[A],P[B],P[i])>0),S2=all.filter(i=>cr(P[B],P[A],P[i])>0);
+  snap({lines:[3],names:[[A,'A'],[B,'B']],s1:S1,s2:S2,
+        ttl:()=>'Étape 2 : séparer les autres points',
+        expl:()=>`${S1.length} point(s) sont au-dessus de [AB] (S1) et ${S2.length} en dessous (S2). Chaque groupe sera traité séparément.`});
+  snap({lines:[4],names:[[A,'A'],[B,'B']],s1:S1,s2:S2,
+        ttl:()=>'Étape 3 : lancer les deux appels',
+        expl:()=>`FindHull(S1, A, B) traite S1, au-dessus de [AB] ; puis FindHull(S2, B, A) traite S2, en dessous.`});
+
+  function find(Sk,p,q){
+    stack.push(()=>`FindHull(Sk : ${Sk.length} point(s))`);
+    const seg=[p,q];
+    const names=[[p,'P'],[q,'Q']];
+    if(Sk.length===0){
+      snap({lines:[6,7],seg,names,
+            ttl:()=>'Sk est vide : on retourne',
+            expl:()=>`Aucun point dans Sk au-dessus de [PQ]. [PQ] est donc un côté de l'enveloppe (en cyan).`});
+      edges.push([p,q]);
+      stack.pop();return;
+    }
+    let c=Sk[0];
+    Sk.forEach(i=>{if(cr(P[p],P[q],P[i])>cr(P[p],P[q],P[c]))c=i});
+    snap({lines:[6,8],seg,names:[...names,[c,'C']],sk:Sk,proj:true,c,
+          ttl:()=>'Trouver le point le plus loin de [PQ]',
+          expl:()=>`Sk contient ${Sk.length} point(s). Les pointillés mesurent leur distance à [PQ] : C est le plus éloigné.`});
+    verts.push(c);
+    const withC=[...names,[c,'C']];
+    const S1s=Sk.filter(i=>cr(P[p],P[c],P[i])>0),S2s=Sk.filter(i=>cr(P[c],P[q],P[i])>0);
+    const elim=Sk.filter(i=>i!==c&&!S1s.includes(i)&&!S2s.includes(i));
+    snap({lines:[9],seg,names:withC,sk:Sk,c,tri:[p,c,q],
+          ttl:()=>"Ajouter C à l'enveloppe",
+          expl:()=>`C devient un sommet. Les côtés [PC] et [CQ] deviennent candidats.`});
+    snap({lines:[10],seg,names:withC,sk:Sk,c,tri:[p,c,q],s1:S1s,s2:S2s,elim,
+          ttl:()=>'Répartir les points restants',
+          expl:()=>`S1 : ${S1s.length} point(s) à l'extérieur de [PC]. S2 : ${S2s.length} à l'extérieur de [CQ]. Les croix sont dans le triangle PCQ : elles sont éliminées.`});
+    find(S1s,p,c);
+    find(S2s,c,q);
+    stack.pop();
+  }
+  find(S1,A,B);
+  find(S2,B,A);
+
+  stack.length=0;
+  snap({done:true,
+        ttl:()=>'Enveloppe convexe terminée',
+        expl:()=>`Tous les côtés sont trouvés : l'enveloppe a ${edges.length} sommets. Les autres points sont à l'intérieur et ne sont jamais sommets.`});
+  return frames;
+}
+
+function newCloud(){
+  P=randomPts(12);
+  F=build();
+  k=0;
+}
+
+/* Étiquette une zone : un nom (Sk, S1, S2) au centre de ses points */
+function zoneTag(ctx2,pts,text,col,pt){
+  if(!pts.length)return;
+  let mx=0,my=0;pts.forEach(i=>{const q=pt(i);mx+=q.x;my+=q.y});
+  mx/=pts.length;my/=pts.length;
+  ctx2.font='700 12px JetBrains Mono, Consolas, monospace';
+  const w=ctx2.measureText(text).width+10;
+  ctx2.fillStyle='rgba(7,0,15,.8)';ctx2.fillRect(mx-w/2,my-30,w,18);
+  ctx2.fillStyle=col;ctx2.fillText(text,mx-w/2+5,my-17);
+}
+
+function draw(f){
+  const S=SZ,pad=34;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,S,S);
+  const X=i=>pad+P[i].x*(S-2*pad),Y=i=>S-pad-P[i].y*(S-2*pad);
+  const pt=i=>({x:X(i),y:Y(i)});
+  const line=(a,b,col,w,dash)=>{ctx.save();ctx.setLineDash(dash||[]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=col;ctx.lineWidth=w;ctx.stroke();ctx.restore()};
+  const ring=(q,col,r)=>{ctx.beginPath();ctx.arc(q.x,q.y,r||11,0,Math.PI*2);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke()};
+
+  if(f.tri){
+    const [a,b,c]=f.tri.map(pt);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);ctx.closePath();
+    ctx.fillStyle='rgba(255,46,136,.18)';ctx.fill();
+    ctx.strokeStyle='rgba(255,46,136,.8)';ctx.lineWidth=2;ctx.stroke();
+  }
+  if(f.base&&!f.done)line(pt(f.base[0]),pt(f.base[1]),'rgba(185,172,207,.55)',1.5,[6,5]);
+  f.edges.forEach(([a,b])=>line(pt(a),pt(b),'#00F0FF',3));
+  if(f.seg&&!f.done)line(pt(f.seg[0]),pt(f.seg[1]),'#FFE600',4);
+
+  if(f.proj&&f.seg){
+    const A=pt(f.seg[0]),B=pt(f.seg[1]);
+    const dx=B.x-A.x,dy=B.y-A.y,L2=dx*dx+dy*dy;
+    f.sk.forEach(i=>{
+      const q=pt(i);
+      const t=((q.x-A.x)*dx+(q.y-A.y)*dy)/L2;
+      const Fp={x:A.x+t*dx,y:A.y+t*dy};
+      const isC=i===f.c;
+      line(q,Fp,isC?'#FF2E88':'rgba(185,172,207,.6)',isC?2.5:1.2,isC?[]:[4,4]);
+      ctx.beginPath();ctx.arc(Fp.x,Fp.y,2.4,0,Math.PI*2);ctx.fillStyle=isC?'#FF2E88':'rgba(185,172,207,.9)';ctx.fill();
+    });
+  }
+
+  /* Sk : ensemble courant, en halo gris */
+  f.sk.forEach(i=>{if(i!==f.c)ring(pt(i),'rgba(154,154,176,.75)',16)});
+  f.s1.forEach(i=>ring(pt(i),'#FFE600'));
+  f.s2.forEach(i=>ring(pt(i),'#B79BFF'));
+  f.elim.forEach(i=>{const q=pt(i);ctx.strokeStyle='#7D6FA0';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(q.x-6,q.y-6);ctx.lineTo(q.x+6,q.y+6);ctx.moveTo(q.x+6,q.y-6);ctx.lineTo(q.x-6,q.y+6);ctx.stroke()});
+
+  /* Noms des zones */
+  if(f.sk.length)zoneTag(ctx,f.sk.filter(i=>i!==f.c),'Sk','#9A9AB0',pt);
+  zoneTag(ctx,f.s1,'S1','#FFE600',pt);
+  zoneTag(ctx,f.s2,'S2','#B79BFF',pt);
+
+  /* Points : seuls les rôles de l'étape sont nommés */
+  P.forEach((_,i)=>{
+    const q=pt(i),isV=f.verts.includes(i);
+    const role=f.names.find(([j])=>j===i);
+    ctx.beginPath();ctx.arc(q.x,q.y,6,0,Math.PI*2);
+    ctx.fillStyle=isV?'#00F0FF':'#FFFFFF';ctx.fill();
+    if(!role)return;
+    const col=role[1]==='C'?'#FF2E88':(role[1]==='A'||role[1]==='B'?'#00F0FF':'#FFE600');
+    ctx.font='700 14px JetBrains Mono, Consolas, monospace';
+    ctx.fillStyle=col;
+    ctx.fillText(role[1],q.x+9,q.y-8);
+  });
+}
+
+function show(){
+  const f=F[k],n=F.length-1;
+  draw(f);
+  document.getElementById('stepno').textContent=`Étape ${k} / ${n}`;
+  ttlEl.textContent=f.ttl();
+  explEl.textContent=f.expl();
+  document.querySelectorAll('.ln').forEach(el=>el.classList.toggle('on',f.lines.includes(+el.dataset.l)));
+  stackEl.innerHTML=f.stack.length
+    ?f.stack.map((fn,d)=>`<div class="call" style="margin-left:${d*16}px">${d?'↳ ':''}${fn()}</div>`).join('')
+    :'<div class="dim">vide : l\'algorithme est terminé</div>';
+  foundEl.textContent=f.verts.length+' sommet(s)';
+  document.getElementById('prev').disabled=k===0;
+  document.getElementById('next').disabled=k>=n;
+}
+
+function fit(){
+  let w=Math.min(cv.parentElement.clientWidth,EMBED?640:520);
+  if(EMBED)w=Math.min(w,window.innerHeight-255);
+  w=Math.max(240,w);
+  dpr=window.devicePixelRatio||1;
+  SZ=w;
+  cv.style.width=w+'px';cv.style.height=w+'px';
+  cv.width=Math.round(w*dpr);cv.height=Math.round(w*dpr);
+  show();
+}
+
+document.getElementById('next').onclick=()=>{if(k<F.length-1){k++;show()}};
+document.getElementById('prev').onclick=()=>{if(k>0){k--;show()}};
+document.getElementById('shuffle').onclick=()=>{newCloud();show()};
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight')document.getElementById('next').click();
+  if(e.key==='ArrowLeft')document.getElementById('prev').click();
+});
+window.addEventListener('resize',fit);
+
+newCloud();
+fit();
+</script>
+</body>
+</html>
